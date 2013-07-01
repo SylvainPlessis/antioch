@@ -41,6 +41,8 @@
 #include "antioch/cea_thermo.h"
 #include "antioch/kinetics_evaluator.h"
 
+#ifdef ANTIOCH_HAVE_EIGEN
+
 template <typename Scalar>
 int tester(const std::string& input_name)
 {
@@ -143,8 +145,11 @@ int tester(const std::string& input_name)
   return return_flag;
 }
 
+#endif
+
 int main(int argc, char* argv[])
 {
+#ifdef ANTIOCH_HAVE_EIGEN
   // Check command line count.
   if( argc < 2 )
     {
@@ -158,4 +163,7 @@ int main(int argc, char* argv[])
           tester<long double>(std::string(argv[1])) || */
         //  );
   return fl;
+#else
+  return 77;
+#endif
 }
