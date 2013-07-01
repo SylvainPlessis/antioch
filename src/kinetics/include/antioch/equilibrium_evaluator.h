@@ -34,7 +34,6 @@
 #include "antioch/cea_thermo.h"
 #include "antioch/data_equilibrium.h"
 
-
 //C++
 #include <vector>
 
@@ -47,7 +46,7 @@ namespace Antioch
   public:
     EquilibriumEvaluator(DataEquilibrium<CoeffType> &data_eq,
                          KineticsEvaluator<CoeffType,StateType>&kin,
-                         const long double tol = std::numeric_limits<StateType>::epsilon() * 100);
+                         const StateType tol = std::numeric_limits<StateType>::epsilon() * 100);
 
     ~EquilibriumEvaluator();
 
@@ -62,8 +61,8 @@ namespace Antioch
     void equilibrium();
 
     const bool success()              const {return !over_threshold;}
-    const double residual()           const {return thres;}
-    const double conv_threshold()     const {return threshold;}
+    const StateType residual()        const {return thres;}
+    const StateType conv_threshold()  const {return threshold;}
     const unsigned int max_loop_tol() const {return max_loop;}
 
     void provide_first_guess(const std::vector<CoeffType> &first_mass_fraction)
@@ -85,16 +84,23 @@ namespace Antioch
     KineticsEvaluator<CoeffType,StateType> &kinetics_eval;
     DataEquilibrium<CoeffType> & data_storage_and_constrain;
 
+    void solve_decomp(const std::vector<std::vector<CoeffType> > &jacob,
+                      const std::vector<CoeffType> &target,
+                      Eigen::Matrix<CoeffType,Eigen::Dynamic,1> &x);
+
+    mutable Eigen::Matrix<CoeffType,5,5> A;//Eigen::Dynamic,Eigen::Dynamic> A;
+    mutable Eigen::Matrix<CoeffType,5,1> b;//Eigen::Dynamic,1> b;
+
 
     //useless but needed
     std::vector<CoeffType> dGibbs_RT_dT;
     std::vector<CoeffType> dmass_dT;
 
     //local variables
-    const long double threshold;
+    const StateType threshold;
+    StateType thres;
     const unsigned int max_loop;
     bool over_threshold;
-    double thres;
 
     //! 
     EquilibriumEvaluator();
@@ -103,18 +109,22 @@ namespace Antioch
   template<typename CoeffType, typename StateType>
   inline
   EquilibriumEvaluator<CoeffType,StateType>::~EquilibriumEvaluator()
-  {return;}
+  {
+    return;
+  }
 
   template<typename CoeffType, typename StateType>
   inline
   EquilibriumEvaluator<CoeffType,StateType>::EquilibriumEvaluator( DataEquilibrium<CoeffType>& data_eq,
                                                                    KineticsEvaluator<CoeffType,StateType>& kin,
-                                                                   const long double tol )
+                                                                   const StateType tol )
     : mass_tot(0.),
       kinetics_eval(kin),
       data_storage_and_constrain(data_eq),
+      A(data_eq.reaction_set().n_species(),data_eq.reaction_set().n_species()),
+      b(data_eq.reaction_set().n_species()),
       threshold(tol),max_loop(100),
-      over_threshold(true),thres(-1.)
+      over_threshold(true)
   {
     eq_mass_fraction.resize(data_storage_and_constrain.reaction_set().n_species(),0.);
     first_guess_iso();
@@ -130,12 +140,6 @@ namespace Antioch
 
     std::vector<StateType> F;
     std::vector<std::vector<StateType> > jacob;
-    unsigned int ncol(data_storage_and_constrain.reaction_set().n_species());
-    unsigned int nrow(data_storage_and_constrain.reaction_set().n_species());
-
-    Eigen::Matrix<StateType,Eigen::Dynamic,Eigen::Dynamic> jacob_decomp(nrow,ncol);
-    Eigen::Matrix<StateType,Eigen::Dynamic,1> deltaX(nrow);
-    Eigen::Matrix<StateType,Eigen::Dynamic,1> minus_function(nrow);
 
     over_threshold = true;
     unsigned int nloop(0);
@@ -144,50 +148,56 @@ namespace Antioch
         nloop++;
         calculate_function_and_jacobian(F,jacob);
         Antioch::set_zero(thres);
-        antioch_assert_equal_to(F.size(),ncol);
-        antioch_assert_equal_to(jacob.size(),ncol);
-        for(unsigned int i = 0; i < nrow; i++)
-          {
+        antioch_assert_equal_to(F.size(),data_storage_and_constrain.reaction_set().n_species());
+        antioch_assert_equal_to(jacob.size(),data_storage_and_constrain.reaction_set().n_species());
+        for(unsigned int i = 0; i < data_storage_and_constrain.reaction_set().n_species(); i++)
+        {
             thres += (F[i] > 0.)?F[i]:-F[i];
-            minus_function(i) = -F[i];
-            antioch_assert_equal_to(jacob[i].size(),F.size());
-            for(unsigned int j = 0; j < ncol; j++)
-              {
-                jacob_decomp(i,j) = jacob[i][j];
-              }
-          }
+            antioch_assert_equal_to((int)jacob[i].size(),b.innerSize());
+            b(i) = - F[i];
+            for(unsigned int j = 0; j < jacob[i].size(); j++)
+            {
+               A(i,j) = jacob[i][j];
+            }
+        }  
         over_threshold = thres > threshold;
         if(!over_threshold)break;
 
-        std::cout << jacob_decomp << " and\n " << minus_function << std::endl;
-        deltaX = jacob_decomp.partialPivLu().solve(minus_function);
-        std::cout << "gives\n" << deltaX << std::endl;
+std::cout << A << " and\n " << b << std::endl;
+//        Eigen::Matrix<StateType,Eigen::Dynamic,1> x(data_storage_and_constrain.reaction_set().n_species());
+        Eigen::Matrix<StateType,5,1> x = A.partialPivLu().solve(b);
+std::cout << "gives\n" << x << std::endl;
 
-        Antioch::set_zero(thres);
         Antioch::set_zero(mass_tot);
+        Antioch::set_zero(thres);
         for(unsigned int i = 0; i < data_storage_and_constrain.reaction_set().n_species(); i++)
           {
-            thres += (deltaX(i) > 0.)?deltaX(i):-deltaX(i);
-
+            thres += (x(i) > 0.)?x(i):-x(i);
             //std::cout << data_storage_and_constrain.reaction_set().chemical_mixture().chemical_species()[i]->species() << " (" << minus_function(i) << "): " 
             //          << eq_mass[i] << " ** ";
-
-            eq_mass[i] += deltaX(i);
+            eq_mass[i] += x(i);
             if(eq_mass[i] < 0.)eq_mass[i] = -eq_mass[i];
             eq_molar_densities[i] = eq_mass[i]/data_storage_and_constrain.reaction_set().chemical_mixture().M(i);
             //std::cout << eq_mass[i] <<  std::endl;
             /*
-              eq_molar_densities[i] += deltaX(i);
+              eq_molar_densities[i] += x(i);
               eq_mass[i] = eq_molar_densities[i] * data_storage_and_constrain.reaction_set().chemical_mixture().M(i);
               std::cout << eq_molar_densities[i] <<  std::endl;
             */
             mass_tot += eq_mass[i];
           }
 
-        if(thres != thres)break;
+std::cout << "mass tot & ini " << mass_tot << "  " << mass_tot_ini << std::endl;
+
+        if(thres != thres)break; //!TODO quick nan fix, need better treatment
         over_threshold = thres > threshold;
         if(nloop > max_loop)break;
       }
+
+     for(unsigned int i = 0; i < data_storage_and_constrain.reaction_set().n_species(); i++)
+     {
+        eq_mass_fraction[i] = eq_mass[i]/mass_tot;
+     }
 
   }
 

@@ -82,14 +82,15 @@ int tester(const std::string& input_name)
   eq_solver.first_guess_molar_fraction(first);
   eq_solver.equilibrium();
 
-  // solution testing
-  std::vector<Scalar> molar_densities = eq_solver.molar_densities_equilibrium();
+  // solution testing => omega_dot = 0
+  std::vector<Scalar> mass_fraction_eq = eq_solver.mass_fraction_equilibrium();
+  std::vector<Scalar> molar_densities_eq = eq_solver.molar_densities_equilibrium();
 
-  Scalar TotDens(0.);
-  for(unsigned int nsp = 0; nsp < n_species; nsp++)
-  {
-     TotDens += molar_densities[nsp];
-  }
+  const Scalar R_mix = chem_mixture.R(mass_fraction_eq); // get R_tot in J.kg-1.K-1
+  const Scalar rho = P/(R_mix*T); // kg.m-3
+
+  std::vector<Scalar> molar_densities(n_species,0.);
+  chem_mixture.molar_densities(rho,mass_fraction_eq,molar_densities);
 
   std::vector<Scalar> h_RT_minus_s_R(n_species);
   std::vector<Scalar> dh_RT_minus_s_R_dT(n_species);
@@ -109,6 +110,28 @@ int tester(const std::string& input_name)
   {
 
   const Scalar tol = std::numeric_limits<Scalar>::epsilon() * 100;
+
+//first test consistency
+  Scalar cons;
+  Antioch::set_zero(cons);
+  for(unsigned int isp = 0; isp < n_species; isp++)
+  {
+      cons += (molar_densities[isp] - molar_densities_eq[isp] > 0.)?
+                molar_densities[isp] - molar_densities_eq[isp]:
+                molar_densities_eq[isp] - molar_densities[isp];
+  }
+   if(cons > tol)
+   {
+      return_flag = 1;
+       std::cout << "tolerance is " << tol << " and diff in concentration is " << cons << std::endl;
+      for(unsigned int isp = 0; isp < n_species; isp++)
+      {
+         std::cout << chem_mixture.chemical_species()[isp]->species() 
+                   << " eq_solver = " << molar_densities_eq[isp] 
+                   << " , recomputed = " << molar_densities[isp] << std::endl;
+      }
+   }
+
 
   Scalar sum_dot(0.L);
   for( unsigned int s = 0; s < n_species; s++)
