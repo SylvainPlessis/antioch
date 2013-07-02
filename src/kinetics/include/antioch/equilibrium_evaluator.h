@@ -88,8 +88,8 @@ namespace Antioch
                       const std::vector<CoeffType> &target,
                       Eigen::Matrix<CoeffType,Eigen::Dynamic,1> &x);
 
-    mutable Eigen::Matrix<CoeffType,5,5> A;//Eigen::Dynamic,Eigen::Dynamic> A;
-    mutable Eigen::Matrix<CoeffType,5,1> b;//Eigen::Dynamic,1> b;
+    mutable Eigen::Matrix<CoeffType,Eigen::Dynamic,Eigen::Dynamic> A;
+    mutable Eigen::Matrix<CoeffType,Eigen::Dynamic,1> b;
 
 
     //useless but needed
@@ -285,6 +285,31 @@ std::cout << "mass tot & ini " << mass_tot << "  " << mass_tot_ini << std::endl;
         eq_mass[i] = mass_tot * eq_mass_fraction[i];
         eq_molar_densities[i] = eq_mass[i] / data_storage_and_constrain.reaction_set().chemical_mixture().M(i);
       }
+
+/// first approx prod/loss*Cs
+    std::vector<std::vector<StateType> > lossM,prodM,netM;
+    //setting the system
+    std::vector<StateType> h_RT_minus_s_R(data_storage_and_constrain.reaction_set().n_species());
+
+    Antioch::CEAThermodynamics<StateType> thermo(data_storage_and_constrain.reaction_set().chemical_mixture() );
+    typedef typename Antioch::CEAThermodynamics<StateType>::template Cache<StateType> Cache;
+    thermo.h_RT_minus_s_R(Cache(data_storage_and_constrain.T()),h_RT_minus_s_R);
+    data_storage_and_constrain.reaction_set().print_chemical_scheme(std::cout,data_storage_and_constrain.T(),
+                                                    eq_molar_densities,h_RT_minus_s_R,
+                                                    lossM,prodM,netM);
+    for(unsigned int i = 0; i < data_storage_and_constrain.reaction_set().n_species(); i++)
+      {
+        StateType prod;
+        StateType loss;
+        Antioch::set_zero(prod);
+        Antioch::set_zero(loss);
+        for(unsigned int rxn = 0; rxn < ; rxn++)
+        {
+           prod += prodM[i][rxn];
+           loss += lossM[i][rxn];
+        }
+        eq_mass[i] = std::sqrt(prod/loss) * eq_molar_densities[i] * data_storage_and_constrain.reaction_set().chemical_mixture().M(i);
+      }
   }
 
   template<typename CoeffType, typename StateType>
@@ -302,17 +327,11 @@ std::cout << "mass tot & ini " << mass_tot << "  " << mass_tot_ini << std::endl;
   void EquilibriumEvaluator<CoeffType, StateType>::first_guess_molar_fraction(const std::vector<CoeffType> &first)
   {
     antioch_assert_equal_to(first.size(),data_storage_and_constrain.reaction_set().n_species() );
-    CoeffType denom;
-    Antioch::set_zero(denom);
     for(unsigned int i = 0; i < data_storage_and_constrain.reaction_set().n_species(); i++)
       {
-        denom += first[i] * data_storage_and_constrain.reaction_set().chemical_mixture().M(i);
-      }
-    for(unsigned int i = 0; i < data_storage_and_constrain.reaction_set().n_species(); i++)
-      {
+        eq_mass[i] = first[i] * mass_tot_ini * data_storage_and_constrain.reaction_set().chemical_mixture().M(i);
         eq_mass_fraction[i] = first[i] * data_storage_and_constrain.reaction_set().chemical_mixture().M(i)/denom;
       }
-
     return;
   }
 
