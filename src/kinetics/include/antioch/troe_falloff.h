@@ -112,7 +112,9 @@ namespace Antioch
   StateType TroeFalloff<CoeffType>::operator()(const StateType& T, const StateType &Pr) const
   {
     StateType Fcent = this->Fcent(T);
+    using std::exp;
     using std::log;
+    using std::pow;
 
     // c = -0.4 - 0.67 * log10(Fcent)
     // Note log10(x) = (1.0/log(10))*log(x)
@@ -125,7 +127,6 @@ namespace Antioch
     // Pr = [M] * k0/kinf
     StateType logPr = Constants::log10_to_log<CoeffType>()*log(Pr);
 
-    using std::pow;
     //logF =  log10(Fcent) / [1+((log10(Pr) + c)/(n - 0.14*(log10(Pr) + c) ))^2]
     StateType logF = Constants::log10_to_log<CoeffType>()*log(Fcent)/(1. + pow(((logPr + c)/(n - 0.14*(logPr + c) )),2) );
 
@@ -140,10 +141,8 @@ namespace Antioch
   {
     using std::exp;
      
-    StateType one(1.);
-
     // Fcent = (1.-alpha)*exp(-T/T***) + alpha * exp(-T/T*) + exp(-T**/T)
-    StateType Fc = (one - _alpha) * exp(-T/_T3) + _alpha * exp(-T/_T1);
+    StateType Fc = (1 - _alpha) * exp(-T/_T3) + _alpha * exp(-T/_T1);
 
     if(_T2 != 1e50)Fc += exp(-_T2/T);
 
@@ -157,11 +156,9 @@ namespace Antioch
   {
     using std::exp;
     
-    StateType one(1.);
-
     // Fcent = (1.-alpha)*exp(-T/T***) + alpha * exp(-T/T*) + exp(-T**/T)
-    Fc = (one - _alpha) * exp(-T/_T3) + _alpha * exp(-T/_T1);
-    dFc_dT = -(one - _alpha)/_T3 * exp(-T/_T3) - _alpha/_T1 * exp(-T/_T1);
+    Fc = (1 - _alpha) * exp(-T/_T3) + _alpha * exp(-T/_T1);
+    dFc_dT = -(1 - _alpha)/_T3 * exp(-T/_T3) - _alpha/_T1 * exp(-T/_T1);
 
     if(_T2 != 1e50)
       {
@@ -222,15 +219,16 @@ namespace Antioch
 
     //decomposing the equation
     {
-      CoeffType tmp(0.67L);
-      upPart = -0.4L - tmp*logFcent + logPr;
+      const CoeffType tmp(0.67L);
+      const CoeffType tmp2(-0.4L);
+      upPart = tmp2 - tmp*logFcent + logPr;
       dupPart_dT = -tmp*dlogFcent_dT + dlogPr_dT;
     }
 
     //dupPart_dX = dlogPr_dX
     {
-      CoeffType tmp2(1.1761L);
-      CoeffType tmp(0.14L);
+      const CoeffType tmp(0.14L);
+      const CoeffType tmp2(1.1761L);
       downPart = 0.806 - tmp2*logFcent - tmp*logPr;
       ddownPart_dT = - tmp2*dlogFcent_dT - tmp*dlogPr_dT;
     }
@@ -242,21 +240,21 @@ namespace Antioch
 
     //finally log10F
     {
-      CoeffType tmp(2.0L);
-      CoeffType tmp2(10.0L);
-      CoeffType tmp3(1.0L);
+      CoeffType tmp(2);
+      CoeffType tmp2(10);
+      CoeffType tmp3(1);
       CoeffType tmp4(0.14L);
       
-      log10F = logFcent / (1.L + f*f);
-      logF = CoeffType(1.0/std::log10(std::exp(1.0)))*log10F;
-      dlogF_dT = dlogFcent_dT / (1.L + f*f) - tmp * df_dT * f * logFcent/( (1.L + f*f) * (1.L + f*f) );
+      log10F = logFcent / (1 + f*f);
+      logF = CoeffType(1/std::log10(std::exp(tmp3)))*log10F;
+      dlogF_dT = dlogFcent_dT / (1 + f*f) - tmp * df_dT * f * logFcent/( (1 + f*f) * (1 + f*f) );
 
       //dlogF_dX = - 2. * df_dX * f * logFcent/( (1. + f*f) * (1. + f*f) );
       F = exp(logF);
       dF_dT = dlogF_dT * log(tmp2) * F;
       for(unsigned int ip = 0; ip < dF_dX.size(); ip++)
         {
-          dF_dX[ip] = - tmp * dlogPr_dX[ip] * f * (tmp3/upPart + tmp4/downPart) * f * logFcent/( (1.L + f*f) * (1.L + f*f) );
+          dF_dX[ip] = - tmp * dlogPr_dX[ip] * f * (tmp3/upPart + tmp4/downPart) * f * logFcent/( (1 + f*f) * (1 + f*f) );
         }
     }
 
