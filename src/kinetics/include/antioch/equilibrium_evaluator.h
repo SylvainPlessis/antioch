@@ -88,13 +88,15 @@ namespace Antioch
                       const std::vector<CoeffType> &target,
                       Eigen::Matrix<CoeffType,Eigen::Dynamic,1> &x);
 
-    mutable Eigen::Matrix<CoeffType,Eigen::Dynamic,Eigen::Dynamic> A;
-    mutable Eigen::Matrix<CoeffType,Eigen::Dynamic,1> b;
+    Eigen::Matrix<CoeffType,Eigen::Dynamic,Eigen::Dynamic> A;
+    Eigen::Matrix<CoeffType,Eigen::Dynamic,1> b;
 
 
     //useless but needed
     std::vector<CoeffType> dGibbs_RT_dT;
     std::vector<CoeffType> dmass_dT;
+    std::vector<std::vector<StateType> > xistoi;
+    std::vector<CoeffType> eq_xi;
 
     //local variables
     const StateType threshold;
@@ -121,12 +123,20 @@ namespace Antioch
     : mass_tot(0.),
       kinetics_eval(kin),
       data_storage_and_constrain(data_eq),
-      A(data_eq.reaction_set().n_species(),data_eq.reaction_set().n_species()),
-      b(data_eq.reaction_set().n_species()),
+      A(data_eq.reaction_set().n_reactions(),data_eq.reaction_set().n_reactions()),
+      b(data_eq.reaction_set().n_reactions()),
       threshold(tol),max_loop(100),
       over_threshold(true)
   {
     eq_mass_fraction.resize(data_storage_and_constrain.reaction_set().n_species(),0.);
+    eq_mass.resize(data_storage_and_constrain.reaction_set().n_species(),0.);
+    eq_molar_densities.resize(data_storage_and_constrain.reaction_set().n_species(),0.);
+    eq_xi.resize(data_storage_and_constrain.reaction_set().n_reactions());
+    xistoi.resize(data_storage_and_constrain.reaction_set().n_reactions());
+    for(unsigned int rxn = 0; rxn < data_storage_and_constrain.reaction_set().n_reactions(); rxn++)
+    {
+      xistoi[rxn].resize(data_storage_and_constrain.reaction_set().n_species());
+    }
     first_guess_iso();
     return;
   }
@@ -140,6 +150,12 @@ namespace Antioch
 
     std::vector<StateType> F;
     std::vector<std::vector<StateType> > jacob;
+    F.resize(data_storage_and_constrain.reaction_set().n_reactions());
+    jacob.resize(data_storage_and_constrain.reaction_set().n_reactions());
+    for(unsigned int i = 0; i < data_storage_and_constrain.reaction_set().n_reactions(); i++)
+    {
+      jacob[i].resize(data_storage_and_constrain.reaction_set().n_reactions());
+    }
 
     over_threshold = true;
     unsigned int nloop(0);
@@ -148,9 +164,9 @@ namespace Antioch
         nloop++;
         calculate_function_and_jacobian(F,jacob);
         Antioch::set_zero(thres);
-        antioch_assert_equal_to(F.size(),data_storage_and_constrain.reaction_set().n_species());
-        antioch_assert_equal_to(jacob.size(),data_storage_and_constrain.reaction_set().n_species());
-        for(unsigned int i = 0; i < data_storage_and_constrain.reaction_set().n_species(); i++)
+        antioch_assert_equal_to(F.size(),data_storage_and_constrain.reaction_set().n_reactions());
+        antioch_assert_equal_to(jacob.size(),data_storage_and_constrain.reaction_set().n_reactions());
+        for(unsigned int i = 0; i < data_storage_and_constrain.reaction_set().n_reactions(); i++)
         {
             thres += (F[i] > 0.)?F[i]:-F[i];
             antioch_assert_equal_to((int)jacob[i].size(),b.innerSize());
@@ -163,36 +179,49 @@ namespace Antioch
         over_threshold = thres > threshold;
         if(!over_threshold)break;
 
-std::cout << A << " and\n " << b << std::endl;
-//        Eigen::Matrix<StateType,Eigen::Dynamic,1> x(data_storage_and_constrain.reaction_set().n_species());
-        Eigen::Matrix<StateType,5,1> x = A.partialPivLu().solve(b);
+std::cout << A << " and\n" << b << std::endl;
+        Eigen::PartialPivLU<Eigen::Matrix<StateType,Eigen::Dynamic,Eigen::Dynamic> > mypartialPivLu(A);
+        Eigen::Matrix<StateType,Eigen::Dynamic,1> x(data_storage_and_constrain.reaction_set().n_reactions());
+        x = mypartialPivLu.solve(b);
 std::cout << "gives\n" << x << std::endl;
 
         Antioch::set_zero(mass_tot);
         Antioch::set_zero(thres);
-        for(unsigned int i = 0; i < data_storage_and_constrain.reaction_set().n_species(); i++)
-          {
+        for(unsigned int i = 0; i < data_storage_and_constrain.reaction_set().n_reactions(); i++)
+        {
             thres += (x(i) > 0.)?x(i):-x(i);
+            eq_xi[i] += x(i);
+        }
+//        for(unsigned int i = 0; i < data_storage_and_constrain.reaction_set().n_species(); i++)
+//        {
             //std::cout << data_storage_and_constrain.reaction_set().chemical_mixture().chemical_species()[i]->species() << " (" << minus_function(i) << "): " 
             //          << eq_mass[i] << " ** ";
-            eq_mass[i] += x(i);
+/*            eq_mass[i] += x(i);
             if(eq_mass[i] < 0.)eq_mass[i] = -eq_mass[i];
             eq_molar_densities[i] = eq_mass[i]/data_storage_and_constrain.reaction_set().chemical_mixture().M(i);
-            //std::cout << eq_mass[i] <<  std::endl;
-            /*
-              eq_molar_densities[i] += x(i);
-              eq_mass[i] = eq_molar_densities[i] * data_storage_and_constrain.reaction_set().chemical_mixture().M(i);
-              std::cout << eq_molar_densities[i] <<  std::endl;
-            */
-            mass_tot += eq_mass[i];
-          }
+*/            //std::cout << eq_mass[i] <<  std::endl;
+//            mass_tot += eq_mass[i];
+//          }
 
 std::cout << "mass tot & ini " << mass_tot << "  " << mass_tot_ini << std::endl;
 
-        if(thres != thres)break; //!TODO quick nan fix, need better treatment
+        if(thres != thres)break; //!TODO quick nan fix in equilibrium_evaluator.h, need better treatment
         over_threshold = thres > threshold;
         if(nloop > max_loop)break;
       }
+      Antioch::set_zero(mass_tot);
+std::cout << "out of loop conv" << std::endl;
+      for(unsigned int i = 0; i < data_storage_and_constrain.reaction_set().n_species(); i++)
+      {
+        for(unsigned int rxn = 0; rxn < data_storage_and_constrain.reaction_set().n_reactions(); rxn++)
+        {
+          eq_molar_densities[i] += eq_xi[rxn]*data_storage_and_constrain.stoi(rxn,i);
+        }
+        eq_mass[i] = eq_molar_densities[i] * data_storage_and_constrain.reaction_set().chemical_mixture().M(i);
+        mass_tot += eq_mass[i];
+        std::cout << eq_molar_densities[i] << std::endl;
+      }
+std::cout << mass_tot << "mass tot " << std::endl;
 
      for(unsigned int i = 0; i < data_storage_and_constrain.reaction_set().n_species(); i++)
      {
@@ -206,19 +235,60 @@ std::cout << "mass tot & ini " << mass_tot << "  " << mass_tot_ini << std::endl;
   inline
   void EquilibriumEvaluator<CoeffType, StateType>::calculate_function_and_jacobian(std::vector<StateType>& F, std::vector<std::vector<StateType> > &jacob)
   {
-    F = Antioch::zero_clone(eq_mass_fraction);//first fill with pure kinetics
+     Antioch::set_zero(F);//first fill with pure kinetics
+     Antioch::set_zero(jacob);//first fill with pure kinetics
     ///kinetics part only first
     //updating
-    jacob.resize(data_storage_and_constrain.reaction_set().n_species());
-
+/*    std::cout << std::endl;
+    for(unsigned int i = 0; i < eq_mass_fraction.size(); i++)
+      {
+        std::cout << eq_molar_densities[i] << std::endl;
+      }
+    std::cout << std::endl;
+*/
+    std::vector<StateType> tmp;
+    tmp.resize(data_storage_and_constrain.reaction_set().n_species(),0.);
+    for(unsigned int nsp = 0; nsp < data_storage_and_constrain.reaction_set().n_species(); nsp++)
+    {
+      for(unsigned int rxn = 0; rxn < data_storage_and_constrain.reaction_set().n_reactions(); rxn++)
+      {
+         tmp[nsp] += data_storage_and_constrain.stoi(rxn,nsp) * eq_xi[rxn];
+      }
+      tmp[nsp] += eq_molar_densities[nsp];
+    }
+    for(unsigned int rxn = 0; rxn < data_storage_and_constrain.reaction_set().n_reactions()-1; rxn++)
+    {
+      F[rxn] = 0.;
+      for(unsigned int nsp = 0; nsp < data_storage_and_constrain.reaction_set().n_species(); nsp++)
+      {
+          F[rxn] += data_storage_and_constrain.stoi(rxn,nsp)/tmp[nsp];
+      }
+      F[rxn] *= Constants::R_universal<CoeffType>() * data_storage_and_constrain.T();
+      for(unsigned int rxm = 0; rxm < data_storage_and_constrain.reaction_set().n_reactions(); rxm++)
+      {
+        jacob[rxn][rxm] = 0.;
+        for(unsigned int nsp = 0; nsp < data_storage_and_constrain.reaction_set().n_species(); nsp++)
+        {
+            jacob[rxn][rxm] += data_storage_and_constrain.stoi(rxn,nsp)*data_storage_and_constrain.stoi(rxm,nsp)/
+                                (tmp[nsp] * tmp[nsp]);
+        }
+      }
+    }
+    for(unsigned int rxn = 0; rxn < data_storage_and_constrain.reaction_set().n_reactions(); rxn++)
+    {
+        jacob.back()[rxn] = 1.;
+    }
+    F.back() = 0;
+    
     for(unsigned int i = 0; i < data_storage_and_constrain.reaction_set().n_species(); i++)
       {
-        jacob[i].resize(data_storage_and_constrain.reaction_set().n_species(),0.);
         eq_mass_fraction[i] = eq_mass[i]/mass_tot;
       }
 
+    return;
+
     //setting the system
-    std::vector<CoeffType> h_RT_minus_s_R(data_storage_and_constrain.reaction_set().n_species());
+    std::vector<StateType> h_RT_minus_s_R(data_storage_and_constrain.reaction_set().n_species());
 
     Antioch::CEAThermodynamics<StateType> thermo(data_storage_and_constrain.reaction_set().chemical_mixture() );
     typedef typename Antioch::CEAThermodynamics<StateType>::template Cache<StateType> Cache;
@@ -238,22 +308,27 @@ std::cout << "mass tot & ini " << mass_tot << "  " << mass_tot_ini << std::endl;
                                                        F,
                                                        dmass_dT,
                                                        jacob);
-
+/*        std::vector<StateType> scale(data_storage_and_constrain.reaction_set().n_species());
+        kinetics_eval.compute_mass_sources(1000.,
+                                           eq_molar_densities,
+                                           h_RT_minus_s_R,
+                                           scale);
+*/
     /*  std::cout << "F size " << F.size() << std::endl << "\t";
         for(unsigned int i = 0; i < F.size(); i++)std::cout << F[i] << " ";
         std::cout << std::endl;
     */
-    /*
-      for(unsigned int i = 0; i < jacob.size(); i++)
-      {
-      F[i] /= data_storage_and_constrain.reaction_set().chemical_mixture().M(i);
+    
+ /*   for(unsigned int i = 0; i < jacob.size()-1; i++)
+    {
+      F[i] /= scale[i];
       for(unsigned int j= 0; j < jacob[i].size(); j++)
       {
-      jacob[i][j] /= data_storage_and_constrain.reaction_set().chemical_mixture().M(i)/data_storage_and_constrain.reaction_set().chemical_mixture().M(j);
+        jacob[i][j] /= scale[i];
       }
-      }
-    */
-
+    }
+    
+*/
     data_storage_and_constrain.fill_constrain(eq_molar_densities,F,jacob); //constrain added
   }
 
@@ -285,6 +360,9 @@ std::cout << "mass tot & ini " << mass_tot << "  " << mass_tot_ini << std::endl;
         eq_mass[i] = mass_tot * eq_mass_fraction[i];
         eq_molar_densities[i] = eq_mass[i] / data_storage_and_constrain.reaction_set().chemical_mixture().M(i);
       }
+    Antioch::set_zero(eq_xi);
+
+    return;
 
 /// first approx prod/loss*Cs
     std::vector<std::vector<StateType> > lossM,prodM,netM;
@@ -297,19 +375,27 @@ std::cout << "mass tot & ini " << mass_tot << "  " << mass_tot_ini << std::endl;
     data_storage_and_constrain.reaction_set().print_chemical_scheme(std::cout,data_storage_and_constrain.T(),
                                                     eq_molar_densities,h_RT_minus_s_R,
                                                     lossM,prodM,netM);
+    Antioch::set_zero(mass_tot);
     for(unsigned int i = 0; i < data_storage_and_constrain.reaction_set().n_species(); i++)
       {
         StateType prod;
         StateType loss;
         Antioch::set_zero(prod);
         Antioch::set_zero(loss);
-        for(unsigned int rxn = 0; rxn < ; rxn++)
+        for(unsigned int rxn = 0; rxn < data_storage_and_constrain.reaction_set().n_reactions(); rxn++)
         {
            prod += prodM[i][rxn];
            loss += lossM[i][rxn];
         }
-        eq_mass[i] = std::sqrt(prod/loss) * eq_molar_densities[i] * data_storage_and_constrain.reaction_set().chemical_mixture().M(i);
+        eq_molar_densities[i] *= prod/loss;
+        eq_mass[i] = eq_molar_densities[i] * data_storage_and_constrain.reaction_set().chemical_mixture().M(i);
+        mass_tot += eq_mass[i];
       }
+    for(unsigned int i = 0; i < data_storage_and_constrain.reaction_set().n_species(); i++)
+      {
+        eq_mass_fraction[i] = eq_mass[i] / mass_tot;
+      }
+
   }
 
   template<typename CoeffType, typename StateType>
@@ -327,11 +413,19 @@ std::cout << "mass tot & ini " << mass_tot << "  " << mass_tot_ini << std::endl;
   void EquilibriumEvaluator<CoeffType, StateType>::first_guess_molar_fraction(const std::vector<CoeffType> &first)
   {
     antioch_assert_equal_to(first.size(),data_storage_and_constrain.reaction_set().n_species() );
+    eq_molar_densities = Antioch::zero_clone(eq_mass_fraction);
+    eq_mass = Antioch::zero_clone(eq_mass_fraction);
+    Antioch::set_zero(mass_tot);
     for(unsigned int i = 0; i < data_storage_and_constrain.reaction_set().n_species(); i++)
-      {
-        eq_mass[i] = first[i] * mass_tot_ini * data_storage_and_constrain.reaction_set().chemical_mixture().M(i);
-        eq_mass_fraction[i] = first[i] * data_storage_and_constrain.reaction_set().chemical_mixture().M(i)/denom;
-      }
+    {
+      eq_molar_densities[i] = first[i] * data_storage_and_constrain.P()/(Constants::R_universal<CoeffType>()*data_storage_and_constrain.T());
+      eq_mass[i] = eq_molar_densities[i] * data_storage_and_constrain.reaction_set().chemical_mixture().M(i);
+      mass_tot += eq_mass[i];
+    }
+    for(unsigned int i = 0; i < data_storage_and_constrain.reaction_set().n_species(); i++)
+    {
+      eq_mass_fraction[i] = eq_mass[i]/mass_tot;
+    }
     return;
   }
 

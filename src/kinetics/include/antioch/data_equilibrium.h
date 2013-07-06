@@ -62,16 +62,24 @@ namespace Antioch
           void set_mass(const CoeffType &m) {_fixed_mass = m;}
           void set_T(const CoeffType &t)    {_T = t;}
           void set_P(const CoeffType &p)    {_P = p;}
+          int stoi(unsigned int nreac,unsigned int nspec) const {return reac_species_stoi[nreac][nspec];}
+          CoeffType max_xi(unsigned int nreac) const {return xi_max[nreac];}
+          CoeffType min_xi(unsigned int nreac) const {return xi_min[nreac];}
 
 
      protected:
      const CoeffType &_T;
      const CoeffType &_P;
      const ReactionSet<CoeffType> &_reac_set;
+     std::vector<std::vector<int> > reac_species_stoi;
+     std::vector<CoeffType> xi_max;
+     std::vector<CoeffType> xi_min;
 
      private:
 //I don't want it to be used, change it if you want
      DataEquilibrium(){return;}
+     //!\brief fill the matrix reac / species
+     void fill_stoi_matrix();
 
 
      CoeffType _fixed_pressure;
@@ -91,6 +99,7 @@ namespace Antioch
      _T(T_mix),_P(P_mix),_reac_set(reac_set),m_constrain(1),a_constrain(0),p_constrain(0),_n_constrain(1)
   {
      _fixed_pressure = this->_P/(Constants::R_universal<CoeffType>() * this->_T);
+     fill_stoi_matrix();
      set_constrain(key);
      return;
   }
@@ -112,6 +121,24 @@ namespace Antioch
      return;
   }
 
+  template<typename CoeffType>
+  inline
+  void DataEquilibrium<CoeffType>::fill_stoi_matrix()
+  {
+     reac_species_stoi.resize(this->_reac_set.n_reactions());
+     for(int rxn = 0; rxn < this->_reac_set.n_reactions(); rxn++)
+     {
+        reac_species_stoi[rxn].resize(this->_reac_set.n_species());
+        for (unsigned int r=0; r < this->_reac_set.reaction(rxn).n_reactants(); r++)
+        {
+            reac_species_stoi[rxn][this->_reac_set.reaction(rxn).reactant_id(r)] = -this->_reac_set.reaction(rxn).reactant_stoichiometric_coefficient(r);
+        }
+        for (unsigned int p=0; p < this->_reac_set.reaction(rxn).n_products(); p++)
+        {
+            reac_species_stoi[rxn][this->_reac_set.reaction(rxn).product_id(p)] = this->_reac_set.reaction(rxn).product_stoichiometric_coefficient(p);
+        }
+     }
+  }
 
   template<typename CoeffType>
   inline
