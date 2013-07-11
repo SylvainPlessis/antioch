@@ -287,9 +287,6 @@ namespace Antioch
                                                       std::vector<VectorStateType>& netMatrix ) const
   {
 
-    StateType keq = Antioch::zero_clone(T);
-    StateType dkeq_dT = Antioch::zero_clone(T);
-    
     //filling matrixes
     VectorStateType netRate,kfwdCoeff,kbkwdCoeff,kfwd,kbkwd,fwdC,bkwdC;
     
@@ -566,13 +563,13 @@ namespace Antioch
         kbkwdCoeff[rxn] = kfwdCoeff[rxn]/keq;
         kbkwd[rxn] = kbkwdCoeff[rxn];
 
-        for (unsigned int r=0; r<reaction.n_reactants(); r++)
+        for (unsigned int r=0; r < reaction.n_reactants(); r++)
           {
             fwdC[rxn] *= pow( molar_densities[reaction.reactant_id(r)],
                               static_cast<int>(reaction.reactant_stoichiometric_coefficient(r)) );
           }
         kfwd[rxn] *= fwdC[rxn];
-        for (unsigned int p=0; p<reaction.n_products(); p++)
+        for (unsigned int p=0; p < reaction.n_products(); p++)
           {
             bkwdC[rxn] *= pow( molar_densities[reaction.product_id(p)],
                                static_cast<int>(reaction.product_stoichiometric_coefficient(p)) );
