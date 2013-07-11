@@ -76,6 +76,20 @@ max (const MetaPhysicL::NumberArray<size,T>& in)
 }
 
 template <std::size_t size, typename T>
+inline
+T
+min (const MetaPhysicL::NumberArray<size,T>& in)
+{
+  using std::min;
+
+  T minval = in[0];
+  for (std::size_t i = 1; i < size; ++i)
+    minval = min(minval, in[i]);
+
+  return minval;
+}
+
+template <std::size_t size, typename T>
 struct has_size<MetaPhysicL::NumberArray<size,T> >
 {
   static const bool value = true;
@@ -94,6 +108,21 @@ struct value_type<MetaPhysicL::NumberArray<size,T> >
   typedef T type;
   typedef typename value_type<T>::raw_type raw_type;
 };
+
+template <std::size_t size, typename T>
+inline
+MetaPhysicL::NumberArray<size, T>
+if_else(const MetaPhysicL::NumberArray<size, bool>& condition,
+        const MetaPhysicL::NumberArray<size, T>& if_true,
+        const MetaPhysicL::NumberArray<size, T>& if_false)
+{
+  MetaPhysicL::NumberArray<size, T> returnval;
+
+  for (std::size_t i=0; i != size; ++i)
+    returnval[i] = condition[i] ? if_true[i] : if_false[i];
+
+  return returnval;
+}
 
 } // end namespace Antioch
 

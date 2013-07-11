@@ -41,6 +41,12 @@
 // header-only Eigen with header-only Antioch without configure-time flags.
 #endif
 
+// Forward declarations
+namespace Eigen {
+template<typename Derived, typename ThenDerived, typename ElseDerived>
+class Select;
+}
+
 #include "antioch/metaprogramming_decl.h"
 
 namespace std
@@ -63,11 +69,29 @@ namespace Antioch
 
 template <
   template <typename, int, int, int, int, int> class _Matrix,
+  typename _Scalar, int _Rows, int _Cols, int _Options, int _MaxRows, int _MaxCols,
+  typename NewScalar
+>
+struct rebind<_Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>, NewScalar>
+{
+  typedef _Matrix<NewScalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols> type;
+};
+
+template <
+  template <typename, int, int, int, int, int> class _Matrix,
   typename _Scalar, int _Rows, int _Cols, int _Options, int _MaxRows, int _MaxCols
 >
 inline
 _Scalar
 max(const _Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>& in);
+
+template <
+  template <typename, int, int, int, int, int> class _Matrix,
+  typename _Scalar, int _Rows, int _Cols, int _Options, int _MaxRows, int _MaxCols
+>
+inline
+_Scalar
+min(const _Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>& in);
 
 template <
   template <typename, int, int, int, int, int> class _Matrix,
@@ -98,6 +122,16 @@ zero_clone(const _Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>& e
 template <
   template <typename, int, int, int, int, int> class _Matrix,
   typename _Scalar, int _Rows, int _Cols, int _Options, int _MaxRows, int _MaxCols,
+  typename Scalar2
+>
+inline
+void
+zero_clone(_Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>& output,
+           const _Matrix<Scalar2, _Rows, _Cols, _Options, _MaxRows, _MaxCols>& ex);
+
+template <
+  template <typename, int, int, int, int, int> class _Matrix,
+  typename _Scalar, int _Rows, int _Cols, int _Options, int _MaxRows, int _MaxCols,
   typename Scalar
 >
 inline
@@ -112,6 +146,27 @@ template <
 >
 inline
 void set_zero(_Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>& a);
+
+
+template <
+  typename Condition,
+  template <typename, int, int, int, int, int> class _Matrix,
+  typename _Scalar, int _Rows, int _Cols, int _Options, int _MaxRows, int _MaxCols
+>
+inline
+/*
+Eigen::Select<
+  _Matrix<bool, _Rows, _Cols, _Options, _MaxRows, _MaxCols>,
+  _Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>,
+  _Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>
+>
+*/
+_Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>
+if_else(
+const Condition& condition,
+const _Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>& if_true,
+const _Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>& if_false);
+
 
 } // end namespace Antioch
 

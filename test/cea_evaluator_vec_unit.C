@@ -79,7 +79,7 @@ int test_cp( const std::string& species_name, unsigned int species,
 
   int return_flag = 0;
 
-  const Scalar tol = std::numeric_limits<Scalar>::epsilon() * 5;
+  const Scalar tol = std::numeric_limits<Scalar>::epsilon() * 20;
 
   typedef typename Antioch::
 		     template TempCache<TrioScalars> Cache;
@@ -101,10 +101,13 @@ int test_cp( const std::string& species_name, unsigned int species,
   if( Antioch::max(rel_cp_error) > tol )
     {
       std::cerr << "Error: Mismatch in species specific heat."
+		<< std::setprecision
+		     (std::numeric_limits<Scalar>::digits10 + 1)
 		<< "\nspecies    = " << species_name
 		<< "\ncp         = " << cp
 		<< "\ncp_exact   = " << cp_exact
 		<< "\ndifference = " << diff
+		<< "\nrelative   = " << rel_cp_error
 		<< "\ntolerance  = " << tol
 		<< "\nT = " << T << std::endl;
       return_flag = 1;
@@ -304,7 +307,7 @@ int main()
   returnval = returnval ||
     vectester (Eigen::Array<float, 3*ANTIOCH_N_TUPLES, 1>(), "Eigen::ArrayXf");
   returnval = returnval ||
-    vectester (Eigen::Array<float, 3*ANTIOCH_N_TUPLES, 1>(), "Eigen::ArrayXd");
+    vectester (Eigen::Array<double, 3*ANTIOCH_N_TUPLES, 1>(), "Eigen::ArrayXd");
 //  returnval = returnval ||
 //    vectester (Eigen::Array<long double, 3*ANTIOCH_N_TUPLES, 1>(), "Eigen::ArrayXld");
 #endif

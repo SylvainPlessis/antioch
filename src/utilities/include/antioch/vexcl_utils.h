@@ -58,6 +58,19 @@ class Reductor;
 
 class MAX;
 }
+namespace boost {
+  namespace proto {
+    template<typename A0, typename A1, typename A2> 
+      typename result_of::make_expr<
+        tag::if_else_, 
+        deduce_domain,
+        A0 const &, 
+        A1 const &, 
+        A2 const &
+      >::type const 
+      if_else(A0 const & a0, A1 const & a1, A2 const & a2);
+  }
+}
 #endif
 
 
@@ -85,8 +98,17 @@ inline
 T
 max (const vex::vector<T>& in)
 {
-  vex::Reductor<double, vex::MAX> max(in.queue_list());
-  return max(in);
+  vex::Reductor<double, vex::MAX> vex_max(in.queue_list());
+  return vex_max(in);
+}
+
+template <typename T>
+inline
+T
+min (const vex::vector<T>& in)
+{
+  vex::Reductor<double, vex::MIN> vex_min(in.queue_list());
+  return vex_min(in);
 }
 
 template <typename T>
@@ -119,6 +141,15 @@ zero_clone(const vex::vector<T>& example)
   return returnval;
 }
 
+template <typename T1, typename T2>
+inline
+void
+zero_clone(vex::vector<T1>& output, const vex::vector<T2>& example)
+{
+  output.resize(example.size());
+  output = 0;
+}
+
 template <typename T, typename Scalar>
 inline
 vex::vector<T>
@@ -138,6 +169,22 @@ init_clone(vex::vector<T>& output, const vex::vector<T>& example)
   output = example;
 }
 
+template <typename BoolInput,
+	  typename IfValue, typename ElseValue>
+inline
+typename boost::proto::result_of::make_expr<
+  boost::proto::tag::if_else_,
+  boost::proto::deduce_domain,
+  const vex::vector_expression<BoolInput>&,
+  const IfValue&,
+  const ElseValue&
+>::type const
+if_else(const vex::vector_expression<BoolInput> &condition,
+	const IfValue   &if_true,
+	const ElseValue &if_false)
+{
+  return boost::proto::if_else(condition, if_true, if_false);
+}
 
 } // end namespace Antioch
 

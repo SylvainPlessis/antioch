@@ -45,11 +45,25 @@ namespace Antioch
     return in;
   }
 
+  template <typename T>
+  inline
+  T
+  min (const T& in)
+  {
+    return in;
+  }
+
   // A function for zero-initializing vectorized numeric types
   // while resizing them to match the example input
   template <typename T>
   inline
   T zero_clone(const T& /* example */) { return 0; }
+
+  // A function for zero-initializing vectorized numeric types
+  // while resizing them to match the example input
+  template <typename T1, typename T2>
+  inline
+  void zero_clone(T1& output, const T2& /* example */) { output = 0; }
 
   // A function for initializing vectorized numeric types to a
   // constant // while resizing them to match the example input
@@ -80,6 +94,22 @@ namespace Antioch
 	 i != output.size(); ++i)
       init_clone(output[i], example);
   }
+
+  // A default implementation for built-in types
+  template <typename T>
+  inline
+  T if_else(bool condition,
+	    T if_true,
+	    T if_false)
+  {
+    if (condition)
+      return if_true;
+    else
+      return if_false;
+  }
+
+
+
 } // end namespace Antioch
 
 #endif //ANTIOCH_METAPROGRAMMING_H

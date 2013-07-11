@@ -65,11 +65,21 @@ max (const std::valarray<T>& a, const std::valarray<T>& b);
 
 namespace Antioch
 {
+template <typename T, typename NewScalar>
+struct rebind<std::valarray<T>, NewScalar>
+{
+  typedef std::valarray<NewScalar> type;
+};
 
 template <typename T>
 inline
 T
 max (const std::valarray<T>& in);
+
+template <typename T>
+inline
+T
+min (const std::valarray<T>& in);
 
 template <typename T>
 struct has_size<std::valarray<T> >;
@@ -85,6 +95,11 @@ inline
 std::valarray<T>
 zero_clone(const std::valarray<T>& example);
 
+template <typename T1, typename T2>
+inline
+void
+zero_clone(std::valarray<T1>& output, const std::valarray<T2>& example);
+
 template <typename T, typename Scalar>
 inline
 std::valarray<T>
@@ -95,6 +110,12 @@ inline
 void
 init_clone(std::valarray<T>& output, const std::valarray<T>& example);
 
+template <typename T>
+inline
+std::valarray<T>
+if_else(const std::valarray<bool>& condition,
+        const std::valarray<T>& if_true,
+        const std::valarray<T>& if_false);
 } // end namespace Antioch
 
 

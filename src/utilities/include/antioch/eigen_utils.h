@@ -87,6 +87,17 @@ template <
   template <typename, int, int, int, int, int> class _Matrix,
   typename _Scalar, int _Rows, int _Cols, int _Options, int _MaxRows, int _MaxCols
 >
+inline
+_Scalar
+min(const _Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>& in)
+{
+  return in.minCoeff();
+}
+
+template <
+  template <typename, int, int, int, int, int> class _Matrix,
+  typename _Scalar, int _Rows, int _Cols, int _Options, int _MaxRows, int _MaxCols
+>
 struct has_size<_Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols> >
 {
   static const bool value = true;
@@ -136,12 +147,28 @@ zero_clone(const _Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>& e
 template <
   template <typename, int, int, int, int, int> class _Matrix,
   typename _Scalar, int _Rows, int _Cols, int _Options, int _MaxRows, int _MaxCols,
+  typename Scalar2
+>
+inline
+void
+zero_clone(_Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>& output,
+           const _Matrix<Scalar2, _Rows, _Cols, _Options, _MaxRows, _MaxCols>& ex)
+{
+  // We can't just use setZero here with arbitrary _Scalar types
+  output.resize(ex.rows(), ex.cols());
+  output.setConstant(zero_clone(ex[0]));
+}
+
+
+template <
+  template <typename, int, int, int, int, int> class _Matrix,
+  typename _Scalar, int _Rows, int _Cols, int _Options, int _MaxRows, int _MaxCols,
   typename Scalar
 >
 inline
 _Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>
-zero_clone(const _Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>& ex,
-	   const Scalar& value)
+constant_clone(const _Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>& ex,
+	       const Scalar& value)
 {
   // We can't just use setZero here with arbitrary _Scalar types
   if (ex.size())
@@ -164,6 +191,35 @@ void set_zero(_Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>& a)
   if (a.size())
     a.setConstant (zero_clone(a[0]));
 }
+
+
+template <
+  typename Condition,
+  template <typename, int, int, int, int, int> class _Matrix,
+  typename _Scalar, int _Rows, int _Cols, int _Options, int _MaxRows, int _MaxCols
+>
+inline
+/*
+Eigen::Select<
+  _Matrix<bool, _Rows, _Cols, _Options, _MaxRows, _MaxCols>,
+  _Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>,
+  _Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>
+>
+*/
+_Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>
+if_else(
+const Condition& condition,
+const _Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>& if_true,
+const _Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>& if_false)
+{
+  // Work around for current Eigen version bug in which we can't
+  // call select() with expressions, only full objects.
+  _Matrix<bool, _Rows, _Cols, _Options, _MaxRows, _MaxCols>
+    condition_array = condition;
+
+  return condition_array.select(if_true, if_false);
+}
+
 
 } // end namespace Antioch
 

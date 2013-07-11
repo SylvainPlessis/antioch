@@ -104,6 +104,14 @@ max (const std::valarray<T>& in)
 }
 
 template <typename T>
+inline
+T
+min (const std::valarray<T>& in)
+{
+  return in.min();
+}
+
+template <typename T>
 struct has_size<std::valarray<T> >
 {
   static const bool value = true;
@@ -134,6 +142,17 @@ zero_clone(const std::valarray<T>& example)
     return std::valarray<T>();
 }
 
+template <typename T1, typename T2>
+inline
+void
+zero_clone(std::valarray<T1>& output, const std::valarray<T2>& example)
+{
+  const std::size_t sz = example.size();
+  output.resize(sz);
+  for (std::size_t i=0; i != sz; ++i)
+    Antioch::zero_clone(output[i], example[i]);
+}
+
 template <typename T, typename Scalar>
 inline
 std::valarray<T>
@@ -158,6 +177,25 @@ init_clone(std::valarray<T>& output, const std::valarray<T>& example)
     init_clone(output[i], example[i]);
 }
 
+
+template <typename T>
+inline
+std::valarray<T>
+if_else(const std::valarray<bool>& condition,
+        const std::valarray<T>& if_true,
+        const std::valarray<T>& if_false)
+{
+  antioch_assert_equal_to(condition.size(), if_true.size());
+  antioch_assert_equal_to(condition.size(), if_false.size());
+
+  const std::size_t size = condition.size();
+  std::valarray<T> returnval(size);
+
+  for (std::size_t i=0; i != size; ++i)
+    returnval[i] = condition[i] ? if_true[i] : if_false[i];
+
+  return returnval;
+}
 
 } // end namespace Antioch
 

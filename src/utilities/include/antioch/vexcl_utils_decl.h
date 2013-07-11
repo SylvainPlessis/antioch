@@ -47,7 +47,20 @@
 #else
 // Forward declaration instead
 namespace vex {
-template <typename T> class vector;
+  template <typename T> class vector;
+  template <typename T> class vector_expression;
+}
+namespace boost {
+  namespace proto {
+    namespace result_of {
+      template <typename T1, typename T2, typename T3, typename T4, typename T5>
+      class make_expr;
+    }
+    namespace tag {
+      class if_else_;
+    }
+    class deduce_domain;
+  }
 }
 #endif
 
@@ -63,11 +76,21 @@ max(const vex::vector<T>& a,
 
 namespace Antioch
 {
+template <typename T, typename NewScalar>
+struct rebind<vex::vector<T>, NewScalar>
+{
+  typedef vex::vector<NewScalar> type;
+};
 
 template <typename T>
 inline
 T
 max (const vex::vector<T>& in);
+
+template <typename T>
+inline
+T
+min (const vex::vector<T>& in);
 
 template <typename T>
 struct has_size<vex::vector<T> >;
@@ -83,6 +106,11 @@ inline
 vex::vector<T>
 zero_clone(const vex::vector<T>& example);
 
+template <typename T1, typename T2>
+inline
+void
+zero_clone(vex::vector<T1>& output, const vex::vector<T2>& example);
+
 template <typename T, typename Scalar>
 inline
 vex::vector<T>
@@ -92,6 +120,18 @@ template <typename T>
 inline
 void
 init_clone(vex::vector<T>& output, const vex::vector<T>& example);
+
+template <typename BoolInput, typename IfValue, typename ElseValue>
+typename boost::proto::result_of::make_expr<
+  boost::proto::tag::if_else_,
+  boost::proto::deduce_domain,
+  const vex::vector_expression<BoolInput>&,
+  const IfValue&,
+  const ElseValue&
+>::type const
+if_else(const vex::vector_expression<BoolInput> &condition,
+	const IfValue   &if_true,
+	const ElseValue &if_false);
 
 } // end namespace Antioch
 

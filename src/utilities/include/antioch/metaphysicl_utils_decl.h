@@ -59,10 +59,21 @@ template <std::size_t size, typename T> class NumberArray;
 namespace Antioch
 {
 
+template <std::size_t size, typename T, typename NewScalar>
+struct rebind<MetaPhysicL::NumberArray<size,T>, NewScalar>
+{
+  typedef MetaPhysicL::NumberArray<size,NewScalar> type;
+};
+
 template <std::size_t size, typename T>
 inline
 T
 max (const MetaPhysicL::NumberArray<size,T>& in);
+
+template <std::size_t size, typename T>
+inline
+T
+min (const MetaPhysicL::NumberArray<size,T>& in);
 
 template <std::size_t size, typename T>
 struct has_size<MetaPhysicL::NumberArray<size,T> >;
@@ -72,6 +83,13 @@ struct size_type<MetaPhysicL::NumberArray<size,T> >;
 
 template <std::size_t size, typename T>
 struct value_type<MetaPhysicL::NumberArray<size,T> >;
+
+template <std::size_t size, typename T>
+inline
+MetaPhysicL::NumberArray<size, T>
+if_else(const MetaPhysicL::NumberArray<size, bool>& condition,
+        const MetaPhysicL::NumberArray<size, T>& if_true,
+        const MetaPhysicL::NumberArray<size, T>& if_false);
 
 } // end namespace Antioch
 
