@@ -190,8 +190,8 @@ namespace Antioch
   template<typename StateType>
   inline
   void ArrheniusRate<CoeffType>::rate_and_derivative( const StateType& T,
-						      StateType& rate,
-						      StateType& drate_dT) const
+                                                      StateType& rate,
+                                                      StateType& drate_dT) const
   {
     rate     = (*this)(T);
     drate_dT = rate*_Ea/(T*T);
