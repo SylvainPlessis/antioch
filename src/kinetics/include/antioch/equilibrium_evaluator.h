@@ -160,38 +160,52 @@ namespace Antioch
     over_threshold = true;
     unsigned int nloop(0);
     while(over_threshold)
+    {
+      nloop++;
+      calculate_function_and_jacobian(F,jacob);
+      Antioch::set_zero(thres);
+      antioch_assert_equal_to(F.size(),data_storage_and_constrain.reaction_set().n_reactions());
+      antioch_assert_equal_to(jacob.size(),data_storage_and_constrain.reaction_set().n_reactions());
+      for(unsigned int i = 0; i < data_storage_and_constrain.reaction_set().n_reactions(); i++)
       {
-        nloop++;
-        calculate_function_and_jacobian(F,jacob);
-        Antioch::set_zero(thres);
-        antioch_assert_equal_to(F.size(),data_storage_and_constrain.reaction_set().n_reactions());
-        antioch_assert_equal_to(jacob.size(),data_storage_and_constrain.reaction_set().n_reactions());
-        for(unsigned int i = 0; i < data_storage_and_constrain.reaction_set().n_reactions(); i++)
+        thres += (F[i] > 0.)?F[i]:-F[i];
+        antioch_assert_equal_to((int)jacob[i].size(),b.innerSize());
+        b(i) = - F[i];
+        for(unsigned int j = 0; j < jacob[i].size(); j++)
         {
-            thres += (F[i] > 0.)?F[i]:-F[i];
-            antioch_assert_equal_to((int)jacob[i].size(),b.innerSize());
-            b(i) = - F[i];
-            for(unsigned int j = 0; j < jacob[i].size(); j++)
-            {
-               A(i,j) = jacob[i][j];
-            }
-        }  
-        over_threshold = thres > threshold;
-        if(!over_threshold)break;
+          A(i,j) = jacob[i][j];
+        }
+      }  
+      over_threshold = thres > threshold;
+std::cout << "thresh " << thres << " v/s " << threshold << std::endl;
+(over_threshold)?std::cout << "pre: loop again" << std::endl:std::cout << "pre: out" << std::endl;
+      if(!over_threshold)break;
 
 std::cout << A << " and\n" << b << std::endl;
-        Eigen::PartialPivLU<Eigen::Matrix<StateType,Eigen::Dynamic,Eigen::Dynamic> > mypartialPivLu(A);
-        Eigen::Matrix<StateType,Eigen::Dynamic,1> x(data_storage_and_constrain.reaction_set().n_reactions());
-        x = mypartialPivLu.solve(b);
+      Eigen::PartialPivLU<Eigen::Matrix<StateType,Eigen::Dynamic,Eigen::Dynamic> > mypartialPivLu(A);
+      Eigen::Matrix<StateType,Eigen::Dynamic,1> x(data_storage_and_constrain.reaction_set().n_reactions());
+      x = mypartialPivLu.solve(b);
 std::cout << "gives\n" << x << std::endl;
 
-        Antioch::set_zero(mass_tot);
-        Antioch::set_zero(thres);
-        for(unsigned int i = 0; i < data_storage_and_constrain.reaction_set().n_reactions(); i++)
-        {
-            thres += (x(i) > 0.)?x(i):-x(i);
-            eq_xi[i] += x(i);
-        }
+      Antioch::set_zero(mass_tot);
+      Antioch::set_zero(thres);
+std::cout << "before update" << std::endl;
+      for(unsigned int i = 0; i < data_storage_and_constrain.reaction_set().n_reactions(); i++)
+      {
+        std::cout << eq_xi[i] << std::endl;
+      }
+      for(unsigned int i = 0; i < data_storage_and_constrain.reaction_set().n_reactions(); i++)
+      {
+        thres += (x(i) > 0.)?x(i):-x(i);
+        eq_xi[i] += x(i);
+        if(eq_xi[i] > data_storage_and_constrain.max_xi(i))eq_xi[i] = data_storage_and_constrain.max_xi(i);
+        if(eq_xi[i] < data_storage_and_constrain.min_xi(i))eq_xi[i] = data_storage_and_constrain.min_xi(i);
+      }
+std::cout << "after update" << std::endl;
+      for(unsigned int i = 0; i < data_storage_and_constrain.reaction_set().n_reactions(); i++)
+      {
+        std::cout << eq_xi[i] << std::endl;
+      }
 //        for(unsigned int i = 0; i < data_storage_and_constrain.reaction_set().n_species(); i++)
 //        {
             //std::cout << data_storage_and_constrain.reaction_set().chemical_mixture().chemical_species()[i]->species() << " (" << minus_function(i) << "): " 
@@ -204,29 +218,32 @@ std::cout << "gives\n" << x << std::endl;
 //          }
 
 std::cout << "mass tot & ini " << mass_tot << "  " << mass_tot_ini << std::endl;
+std::cout << "thresh " << thres << " v/s " << threshold << std::endl;
+std::cout << "nloop " << nloop << "/" << max_loop << std::endl;
 
-        if(thres != thres)break; //!TODO quick nan fix in equilibrium_evaluator.h, need better treatment
-        over_threshold = thres > threshold;
-        if(nloop > max_loop)break;
-      }
-      Antioch::set_zero(mass_tot);
+      if(thres != thres)break; //!TODO quick nan fix in equilibrium_evaluator.h, need better treatment
+      over_threshold = thres > threshold;
+      (over_threshold)?std::cout << "loop again" << std::endl:std::cout << "out" << std::endl;
+      if(nloop > max_loop)break;
+    }
+    Antioch::set_zero(mass_tot);
 std::cout << "out of loop conv" << std::endl;
-      for(unsigned int i = 0; i < data_storage_and_constrain.reaction_set().n_species(); i++)
+    for(unsigned int i = 0; i < data_storage_and_constrain.reaction_set().n_species(); i++)
+    {
+      for(unsigned int rxn = 0; rxn < data_storage_and_constrain.reaction_set().n_reactions(); rxn++)
       {
-        for(unsigned int rxn = 0; rxn < data_storage_and_constrain.reaction_set().n_reactions(); rxn++)
-        {
-          eq_molar_densities[i] += eq_xi[rxn]*data_storage_and_constrain.stoi(rxn,i);
-        }
-        eq_mass[i] = eq_molar_densities[i] * data_storage_and_constrain.reaction_set().chemical_mixture().M(i);
-        mass_tot += eq_mass[i];
-        std::cout << eq_molar_densities[i] << std::endl;
+        eq_molar_densities[i] += eq_xi[rxn]*data_storage_and_constrain.stoi(rxn,i);
       }
-std::cout << mass_tot << "mass tot " << std::endl;
+      eq_mass[i] = eq_molar_densities[i] * data_storage_and_constrain.reaction_set().chemical_mixture().M(i);
+      mass_tot += eq_mass[i];
+      std::cout << eq_molar_densities[i] << std::endl;
+    }
+std::cout << "mass tot = " << mass_tot << std::endl;
 
-     for(unsigned int i = 0; i < data_storage_and_constrain.reaction_set().n_species(); i++)
-     {
-        eq_mass_fraction[i] = eq_mass[i]/mass_tot;
-     }
+    for(unsigned int i = 0; i < data_storage_and_constrain.reaction_set().n_species(); i++)
+    {
+      eq_mass_fraction[i] = eq_mass[i]/mass_tot;
+    }
 
   }
 
@@ -255,12 +272,14 @@ std::cout << mass_tot << "mass tot " << std::endl;
          tmp[nsp] += data_storage_and_constrain.stoi(rxn,nsp) * eq_xi[rxn];
       }
       tmp[nsp] += eq_molar_densities[nsp];
+std::cout << "denominateur " << tmp[nsp] << std::endl;
     }
     for(unsigned int rxn = 0; rxn < data_storage_and_constrain.reaction_set().n_reactions()-1; rxn++)
     {
       F[rxn] = 0.;
       for(unsigned int nsp = 0; nsp < data_storage_and_constrain.reaction_set().n_species(); nsp++)
       {
+          if(tmp[nsp] == 0.)continue;
           F[rxn] += data_storage_and_constrain.stoi(rxn,nsp)/tmp[nsp];
       }
       F[rxn] *= Constants::R_universal<CoeffType>() * data_storage_and_constrain.T();
@@ -269,6 +288,7 @@ std::cout << mass_tot << "mass tot " << std::endl;
         jacob[rxn][rxm] = 0.;
         for(unsigned int nsp = 0; nsp < data_storage_and_constrain.reaction_set().n_species(); nsp++)
         {
+            if(tmp[nsp] == 0.)continue;
             jacob[rxn][rxm] += data_storage_and_constrain.stoi(rxn,nsp)*data_storage_and_constrain.stoi(rxm,nsp)/
                                 (tmp[nsp] * tmp[nsp]);
         }
@@ -361,6 +381,8 @@ std::cout << mass_tot << "mass tot " << std::endl;
         eq_molar_densities[i] = eq_mass[i] / data_storage_and_constrain.reaction_set().chemical_mixture().M(i);
       }
     Antioch::set_zero(eq_xi);
+
+    data_storage_and_constrain.set_constrain("",eq_molar_densities);
 
     return;
 
