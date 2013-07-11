@@ -49,7 +49,7 @@ namespace Antioch
           void fill_constrain(const std::vector<CoeffType> &molar_densities,
                                         std::vector<CoeffType> &F,std::vector<std::vector<CoeffType> > &jacob);
 
-          void set_constrain(const std::string &key);
+          void set_constrain(const std::string &key,const std::vector<CoeffType> &molar_densities);
 
           const CoeffType T() const {return _T;}
           const CoeffType P() const {return _P;}
@@ -79,7 +79,7 @@ namespace Antioch
 //I don't want it to be used, change it if you want
      DataEquilibrium(){return;}
      //!\brief fill the matrix reac / species
-     void fill_stoi_matrix();
+     void fill_stoi_matrix(const std::vector<CoeffType> &molar_densities);
 
 
      CoeffType _fixed_pressure;
@@ -99,8 +99,6 @@ namespace Antioch
      _T(T_mix),_P(P_mix),_reac_set(reac_set),m_constrain(1),a_constrain(0),p_constrain(0),_n_constrain(1)
   {
      _fixed_pressure = this->_P/(Constants::R_universal<CoeffType>() * this->_T);
-     fill_stoi_matrix();
-     set_constrain(key);
      return;
   }
 
@@ -114,28 +112,39 @@ namespace Antioch
 
   template<typename CoeffType>
   inline
-  void DataEquilibrium<CoeffType>::set_constrain(const std::string &key)
+  void DataEquilibrium<CoeffType>::set_constrain(const std::string &key,const std::vector<CoeffType> &molar_densities)
   {
      if(key.find("m") != std::string::npos)m_constrain = 1;
      if(key.find("p") != std::string::npos){p_constrain = 1;m_constrain = 0;}
+     fill_stoi_matrix(molar_densities);
      return;
   }
 
   template<typename CoeffType>
   inline
-  void DataEquilibrium<CoeffType>::fill_stoi_matrix()
+  void DataEquilibrium<CoeffType>::fill_stoi_matrix(const std::vector<CoeffType> &molar_densities)
   {
      reac_species_stoi.resize(this->_reac_set.n_reactions());
-     for(int rxn = 0; rxn < this->_reac_set.n_reactions(); rxn++)
+     xi_max.resize(this->_reac_set.n_reactions());
+     xi_min.resize(this->_reac_set.n_reactions());
+     for(unsigned int rxn = 0; rxn < this->_reac_set.n_reactions(); rxn++)
      {
         reac_species_stoi[rxn].resize(this->_reac_set.n_species());
+//n_a A + n_b B <=> n_c C + n_d D, min([A]/n_a,[B]/n_b) limits the forward direction (extent of reaction > 0)
+        xi_max[rxn] = 1e20;
         for (unsigned int r=0; r < this->_reac_set.reaction(rxn).n_reactants(); r++)
         {
-            reac_species_stoi[rxn][this->_reac_set.reaction(rxn).reactant_id(r)] = -this->_reac_set.reaction(rxn).reactant_stoichiometric_coefficient(r);
+          reac_species_stoi[rxn][this->_reac_set.reaction(rxn).reactant_id(r)] = -this->_reac_set.reaction(rxn).reactant_stoichiometric_coefficient(r);
+          CoeffType loc_xi = molar_densities[this->_reac_set.reaction(rxn).reactant_id(r)] / this->_reac_set.reaction(rxn).reactant_stoichiometric_coefficient(r);
+          if(loc_xi < xi_max[rxn])xi_max[rxn] = loc_xi;
         }
+//n_a A + n_b B <=> n_c C + n_d D, max(-[C]/n_c,-[D]/n_d) limits the backward direction (extent of reaction < 0)
+        xi_min[rxn] = -1e20;
         for (unsigned int p=0; p < this->_reac_set.reaction(rxn).n_products(); p++)
         {
-            reac_species_stoi[rxn][this->_reac_set.reaction(rxn).product_id(p)] = this->_reac_set.reaction(rxn).product_stoichiometric_coefficient(p);
+          reac_species_stoi[rxn][this->_reac_set.reaction(rxn).product_id(p)] = this->_reac_set.reaction(rxn).product_stoichiometric_coefficient(p);
+          CoeffType loc_xi = molar_densities[this->_reac_set.reaction(rxn).product_id(p)] / -this->_reac_set.reaction(rxn).product_stoichiometric_coefficient(p);
+          if(loc_xi > xi_min[rxn])xi_min[rxn] = loc_xi;
         }
      }
   }
