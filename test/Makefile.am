@@ -50,6 +50,7 @@ check_PROGRAMS += parsing_xml
 check_PROGRAMS += units_unit
 check_PROGRAMS += kinetics_reactive_scheme_unit
 check_PROGRAMS += sigma_bin_converter_unit
+check_PROGRAMS += isothermal_reactor_boost_odeint_regression
 
 if ANTIOCH_ENABLE_EIGEN
 check_PROGRAMS += stat_mech_thermo_unit_eigen
@@ -61,6 +62,7 @@ AM_CPPFLAGS += -I$(top_srcdir)/src/units/include
 AM_CPPFLAGS += -I$(top_srcdir)/src/particles_flux/include
 AM_CPPFLAGS += -I$(top_srcdir)/src/kinetics/include
 AM_CPPFLAGS += -I$(top_srcdir)/src/parsing/include
+AM_CPPFLAGS += -I$(top_srcdir)/src/reactor/include
 AM_CPPFLAGS += -I$(top_srcdir)/src/thermo/include
 AM_CPPFLAGS += -I$(top_srcdir)/src/transport/include
 AM_CPPFLAGS += -I$(top_srcdir)/src/utilities/include
@@ -118,6 +120,7 @@ parsing_xml_SOURCES = parsing_xml.C
 units_unit_SOURCES = units_unit.C
 kinetics_reactive_scheme_unit_SOURCES = kinetics_reactive_scheme_unit.C
 sigma_bin_converter_unit_SOURCES = sigma_bin_converter_unit.C
+isothermal_reactor_boost_odeint_regression_SOURCES = isothermal_reactor_boost_odeint_regression.C
 
 if ANTIOCH_ENABLE_EIGEN
 stat_mech_thermo_unit_eigen_SOURCES = stat_mech_thermo_unit_eigen.C
@@ -172,6 +175,7 @@ TESTS += parsing_xml.sh
 TESTS += units_unit
 TESTS += kinetics_reactive_scheme_unit.sh
 TESTS += sigma_bin_converter_unit.sh
+TESTS += isothermal_reactor_boost_odeint_regression_air_5sp.sh
 
 if ANTIOCH_ENABLE_EIGEN
 TESTS += stat_mech_thermo_unit_eigen
