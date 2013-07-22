@@ -278,9 +278,6 @@ namespace Antioch
     for (unsigned int s=0; s < this->n_species(); s++)
       {
         Antioch::set_zero(dmole_dX_s[s]);
-
-      for (unsigned int rxn = 0; rxn < this->n_reactions(); rxn++)
-        {
         /*! \todo Do we need to really initialize this? */
         Antioch::set_zero(_dnet_rate_dX_s[s]);
       }
@@ -343,7 +340,7 @@ namespace Antioch
   }
 
 
-  template<typename CoeffType, typename StateType>
+  template <typename CoeffType, typename StateType>
   template <typename VectorStateType>
   inline
   void KineticsEvaluator<CoeffType,StateType>::compute_mass_sources_and_derivs( const StateType& T,
