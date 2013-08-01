@@ -2,7 +2,7 @@
 dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT([Antioch], [0.0.5], [pbauman@ices.utexas.edu], [antioch])
+AC_INIT([Antioch], [0.0.7], [pbauman@ices.utexas.edu], [antioch])
 PACKAGE_DESCRIPTION="A New, Templated Implementation of Chemistry for Hydrodynamics"
 AC_SUBST([PACKAGE_DESCRIPTION])
 PACKAGE_URL="http://red.ices.utexas.edu/projects/antioch/"
@@ -148,8 +148,10 @@ AC_ARG_ENABLE(cxx11,
 
 if (test x$enablecxx11 = xyes); then
   AX_CXX_COMPILE_STDCXX_11(noext, mandatory)
+  AX_CXX_AUTO_THIS(optional)
 elif (test x$enablecxx11 = xoptional); then
   AX_CXX_COMPILE_STDCXX_11(noext, optional)
+  AX_CXX_AUTO_THIS(optional)
 fi
 
 
