@@ -53,6 +53,7 @@ namespace Antioch
 
           const CoeffType T() const {return _T;}
           const CoeffType P() const {return _P;}
+          const CoeffType V() const {return _V;}
           const CoeffType local_pressure(const std::vector<CoeffType> &molar_densities) const; 
           const ReactionSet<CoeffType> &reaction_set() const {return _reac_set;}
 
@@ -62,6 +63,7 @@ namespace Antioch
           void set_mass(const CoeffType &m) {_fixed_mass = m;}
           void set_T(const CoeffType &t)    {_T = t;}
           void set_P(const CoeffType &p)    {_P = p;}
+          void set_V(const CoeffType &v)    {_V = v;}
           int stoi(unsigned int nreac,unsigned int nspec) const {return reac_species_stoi[nreac][nspec];}
           CoeffType max_xi(unsigned int nreac) const {return xi_max[nreac];}
           CoeffType min_xi(unsigned int nreac) const {return xi_min[nreac];}
@@ -70,6 +72,7 @@ namespace Antioch
      protected:
      const CoeffType &_T;
      const CoeffType &_P;
+     const CoeffType &_V;
      const ReactionSet<CoeffType> &_reac_set;
      std::vector<std::vector<int> > reac_species_stoi;
      std::vector<CoeffType> xi_max;

@@ -263,6 +263,9 @@ std::cout << "mass tot = " << mass_tot << std::endl;
       }
     std::cout << std::endl;
 */
+
+
+// energy matrix, d2G/dx_idx_j * Delta_x = dG/dx
     std::vector<StateType> tmp;
     tmp.resize(data_storage_and_constrain.reaction_set().n_species(),0.);
     for(unsigned int nsp = 0; nsp < data_storage_and_constrain.reaction_set().n_species(); nsp++)
@@ -307,6 +310,7 @@ std::cout << "denominateur " << tmp[nsp] << std::endl;
 
     return;
 
+//kinetics matrix: d_omega_dot/d_rho * Delta_rho = omega_dot
     //setting the system
     std::vector<StateType> h_RT_minus_s_R(data_storage_and_constrain.reaction_set().n_species());
 
