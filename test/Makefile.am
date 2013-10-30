@@ -13,6 +13,7 @@ check_PROGRAMS += hercourtessen_rate_unit
 check_PROGRAMS += hercourtessen_rate_vec_unit
 check_PROGRAMS += berthelot_rate_unit
 check_PROGRAMS += berthelot_rate_vec_unit
+check_PROGRAMS += arrhenius_rate_deriv
 check_PROGRAMS += arrhenius_rate_unit
 check_PROGRAMS += arrhenius_rate_vec_unit
 check_PROGRAMS += kooij_rate_unit
@@ -41,6 +42,9 @@ check_PROGRAMS += duplicate_process_unit
 check_PROGRAMS += threebody_process_unit
 check_PROGRAMS += lindemann_falloff_unit
 check_PROGRAMS += troe_falloff_unit
+check_PROGRAMS += kinetics_reversibility_unit
+check_PROGRAMS += parsing_xml
+check_PROGRAMS += kinetics_reactive_scheme_unit
 
 if ANTIOCH_ENABLE_EIGEN
 check_PROGRAMS += stat_mech_thermo_unit_eigen
@@ -72,6 +76,7 @@ hercourtessen_rate_unit_SOURCES = hercourtessen_rate_unit.C
 hercourtessen_rate_vec_unit_SOURCES = hercourtessen_rate_vec_unit.C
 berthelot_rate_unit_SOURCES = berthelot_rate_unit.C
 berthelot_rate_vec_unit_SOURCES = berthelot_rate_vec_unit.C
+arrhenius_rate_deriv_SOURCES = arrhenius_rate_deriv.C
 arrhenius_rate_unit_SOURCES = arrhenius_rate_unit.C
 arrhenius_rate_vec_unit_SOURCES = arrhenius_rate_vec_unit.C
 berthelothercourtessen_rate_unit_SOURCES = berthelothercourtessen_rate_unit.C
@@ -100,6 +105,9 @@ duplicate_process_unit_SOURCES = duplicate_process_unit.C
 threebody_process_unit_SOURCES = threebody_process_unit.C
 lindemann_falloff_unit_SOURCES = lindemann_falloff_unit.C
 troe_falloff_unit_SOURCES = troe_falloff_unit.C
+kinetics_reversibility_unit_SOURCES = kinetics_reversibility_unit.C
+parsing_xml_SOURCES = parsing_xml.C
+kinetics_reactive_scheme_unit_SOURCES = kinetics_reactive_scheme_unit.C
 
 if ANTIOCH_ENABLE_EIGEN
 stat_mech_thermo_unit_eigen_SOURCES = stat_mech_thermo_unit_eigen.C
@@ -117,6 +125,7 @@ TESTS += hercourtessen_rate_unit
 TESTS += hercourtessen_rate_unit
 TESTS += berthelot_rate_vec_unit
 TESTS += berthelot_rate_vec_unit
+TESTS += arrhenius_rate_deriv
 TESTS += arrhenius_rate_unit
 TESTS += arrhenius_rate_vec_unit
 TESTS += berthelothercourtessen_rate_unit
@@ -145,6 +154,9 @@ TESTS += duplicate_process_unit
 TESTS += threebody_process_unit
 TESTS += lindemann_falloff_unit
 TESTS += troe_falloff_unit
+TESTS += kinetics_reversibility_unit
+TESTS += parsing_xml.sh
+TESTS += kinetics_reactive_scheme_unit.sh
 
 if ANTIOCH_ENABLE_EIGEN
 TESTS += stat_mech_thermo_unit_eigen

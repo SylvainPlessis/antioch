@@ -59,9 +59,6 @@ namespace Antioch
   template <typename CoeffType>
   class ThreeBodyReaction;
 
-  template <typename CoeffType>
-  class ElementaryReaction;
-
   template <typename CoeffType,typename FalloffType>
   class FalloffReaction;
 
@@ -74,21 +71,30 @@ namespace Antioch
   //!A single reaction mechanism. 
   /*!\class Reaction
    *
+   * A reaction is characterized by the rate constant \f$k(T,[M])\f$, which can
+   * be decomposed into a chemical process and a kinetics model:
+   * \f[
+   *  k(T,[M]) = \chi([M],\alpha(T))
+   * \f]
+   * with \f$\chi\f$ the chemical process and \f$\alpha\f$ the kinetics model.
+   *
    This virtual base is derived for the following processes:
-   - elementary process,
-   - duplicate process,
-   - falloff processes with:
-   - Lindemann falloff,
-   - Troe falloff.
+   - elementary process (ElementaryReaction),
+   - duplicate process (DuplicateReaction),
+   - three body process (ThreeBodyReaction)
+   - falloff processes (FalloffReaction) with:
+      - Lindemann falloff (LindemannFalloff),
+      - Troe falloff (TroeFalloff).
+
    This class encapsulates a kinetics model.  The choosable kinetics models are
-   - Hercourt Hessen \f$\alpha(T) = A T^\beta\f$
-   - Berthelot \f$\alpha(T) = A \exp\left(D T\right)\f$
-   - Arrhenius \f$\alpha(T) = A \exp\left(-\frac{E_a}{T}\right)\f$
-   - Berthelot Hercourt Hessen \f$\alpha(T) = A T^\beta \exp\left(D T\right)\f$
-   - Kooij \f$\alpha(T) = A T^\beta \exp\left(- \frac{E_a}{T}\right)\f$
-   - Van't Hoff \f$\alpha(T) = A T^\beta \exp\left(- \frac{E_a}{T} + D T\right)\f$
-   All reactions are assumed to be reversible. 
-   By default, we choose an elementary process with a Kooij equation.
+   - Hercourt Hessen (HercourtEssenRate),
+   - Berthelot  (BerthelotRate),
+   - Arrhenius  (ArrheniusRate),
+   - Berthelot Hercourt Hessen  (BerthelotHercourtEssenRate),
+   - Kooij, or modified Arrhenius  (KooijRate),
+   - Van't Hoff  (VantHoffRate).
+
+   By default, we choose a reversible ElementaryReaction with a KooijRate kinetics model.
   */
   template<typename CoeffType=double>
   class Reaction
@@ -97,6 +103,7 @@ namespace Antioch
 
     //! Construct a single reaction mechanism.
     Reaction( const unsigned int n_species, const std::string &equation,
+              const bool &reversible = true,
               const ReactionType::ReactionType type = ReactionType::ELEMENTARY,
               const KineticsModel::KineticsModel kin = KineticsModel::KOOIJ);
     
@@ -117,6 +124,10 @@ namespace Antioch
      */
     void set_type( const ReactionType::ReactionType type);
 
+    /*! Set the reversibility of reaction.
+     */
+    void set_reversibility( const bool reversible);
+
     //! Model of kinetics.
     KineticsModel::KineticsModel kinetics_model() const;
 
@@ -124,6 +135,11 @@ namespace Antioch
     void set_kinetics_model( const KineticsModel::KineticsModel kin);
     
     bool initialized() const;
+
+
+    /*! \return the reversibility state of reaction.
+     */
+    bool reversible() const;
 
     //! \returns the number of reactants.
     unsigned int n_reactants() const;
@@ -226,8 +242,14 @@ namespace Antioch
     //! Return writeable reference to the forward rate object
     KineticsType<CoeffType>& forward_rate(unsigned int ir = 0);
 
-    //! Return const reference to the forward rate object
+    //! Add a forward rate object
     void add_forward_rate(KineticsType<CoeffType> *rate);
+
+    //! Swap two forward rates object
+    void swap_forward_rates(unsigned int irate, unsigned int jrate);
+
+    //! Return the number of rate constant objects
+    unsigned int n_rate_constants() const;
 
     //! Formatted print, by default to \p std::cout.
     void print(std::ostream& os = std::cout) const;
@@ -255,6 +277,7 @@ namespace Antioch
     std::vector<int>          _species_delta_stoichiometry;
     int _gamma;
     bool _initialized;
+    bool _reversible;
     ReactionType::ReactionType _type;
     KineticsModel::KineticsModel _kintype;
 
@@ -295,6 +318,14 @@ namespace Antioch
 
   template<typename CoeffType>
   inline
+  void Reaction<CoeffType>::set_reversibility( const bool reversible)
+  {
+    _reversible = reversible;
+    return;
+  }
+
+  template<typename CoeffType>
+  inline
   KineticsModel::KineticsModel Reaction<CoeffType>::kinetics_model() const
   {
     return _kintype;
@@ -315,12 +346,39 @@ namespace Antioch
     return _initialized;
   }
 
+  template<typename CoeffType>
+  inline
+  bool Reaction<CoeffType>::reversible() const
+  {
+    return _reversible;
+  }
 
   template<typename CoeffType>
   inline
   void Reaction<CoeffType>::add_forward_rate(KineticsType<CoeffType> *rate)
   {
     _forward_rate.push_back(rate);
+    return;
+  }
+
+  template<typename CoeffType>
+  inline
+  unsigned int Reaction<CoeffType>::n_rate_constants() const
+  {
+    return _forward_rate.size();
+  }
+    
+  template<typename CoeffType>
+  inline
+  void Reaction<CoeffType>::swap_forward_rates(unsigned int irate, unsigned int jrate)
+  {
+    antioch_assert_less(irate,_forward_rate.size());
+    antioch_assert_less(jrate,_forward_rate.size());
+    
+    KineticsType<CoeffType>* rate_tmp = _forward_rate[jrate];
+    _forward_rate[jrate] = _forward_rate[irate];
+    _forward_rate[irate] = rate_tmp;
+
     return;
   }
 
@@ -455,6 +513,7 @@ namespace Antioch
   inline
   const KineticsType<CoeffType>& Reaction<CoeffType>::forward_rate(unsigned int ir) const
   {
+    antioch_assert_less(ir,_forward_rate.size());
     return *_forward_rate[ir];
   }
 
@@ -462,6 +521,7 @@ namespace Antioch
   inline
   KineticsType<CoeffType>& Reaction<CoeffType>::forward_rate(unsigned int ir)
   {
+    antioch_assert_less(ir,_forward_rate.size());
     return *_forward_rate[ir];
   }
 
@@ -469,13 +529,15 @@ namespace Antioch
   template<typename CoeffType>
   inline
   Reaction<CoeffType>::Reaction( const unsigned int n_species,
-                                 const std::string &equation, 
+                                 const std::string &equation,
+                                 const bool &reversible,
                                  const ReactionType::ReactionType type,
-                                 const KineticsModel::KineticsModel kin) 
+                                 const KineticsModel::KineticsModel kin)
     : _n_species(n_species),
       _equation(equation),
       _gamma(0),
       _initialized(false),
+      _reversible(reversible),
       _type(type),
       _kintype(kin)
   {
@@ -750,9 +812,9 @@ namespace Antioch
                                                            const StateType& P0_RT,  
                                                            const VectorStateType& h_RT_minus_s_R) const
   {
-    StateType kfwd_times_reactants = this->compute_forward_rate_coefficient(molar_densities,T);
-    StateType Keq = this->equilibrium_constant( P0_RT, h_RT_minus_s_R );
-    StateType kbkwd_times_products = kfwd_times_reactants/Keq;
+    StateType kfwd = this->compute_forward_rate_coefficient(molar_densities,T);
+    StateType kfwd_times_reactants = kfwd;
+
     // Rfwd
     for (unsigned int ro=0; ro < this->n_reactants(); ro++)
       {
@@ -761,14 +823,22 @@ namespace Antioch
             static_cast<int>(this->reactant_stoichiometric_coefficient(ro)) );
       }
 
-    // Rbkwd 
-    for (unsigned int po=0; po< this->n_products(); po++)
-      {
-        kbkwd_times_products     *= 
-          ant_pow( molar_densities[this->product_id(po)],
-            static_cast<int>(this->product_stoichiometric_coefficient(po)) );
-          
-      }
+    StateType kbkwd_times_products = Antioch::zero_clone(kfwd_times_reactants);
+    if(_reversible)
+    {
+
+      StateType Keq = this->equilibrium_constant( P0_RT, h_RT_minus_s_R );
+      kbkwd_times_products = kfwd/Keq;
+
+      // Rbkwd 
+      for (unsigned int po=0; po< this->n_products(); po++)
+        {
+          kbkwd_times_products     *= 
+            ant_pow( molar_densities[this->product_id(po)],
+              static_cast<int>(this->product_stoichiometric_coefficient(po)) );
+         
+        }
+    }
 
     return kfwd_times_reactants - kbkwd_times_products;
 
@@ -789,6 +859,7 @@ namespace Antioch
   {
     antioch_assert_equal_to (molar_densities.size(), this->n_species());
 
+// First the forward component, if reversible, compute and add the backward component
 
     StateType kfwd = Antioch::zero_clone(T);
     StateType dkfwd_dT = Antioch::zero_clone(T);
@@ -797,27 +868,10 @@ namespace Antioch
 
     compute_forward_rate_coefficient_and_derivatives(molar_densities, T, kfwd, dkfwd_dT ,dkfwd_dX_s);
 
-    StateType keq = Antioch::zero_clone(T);
-    StateType dkeq_dT = Antioch::zero_clone(T);
-
-    equilibrium_constant_and_derivative( T, P0_RT, h_RT_minus_s_R,
-                                         dh_RT_minus_s_R_dT,
-                                         keq, dkeq_dT );
-
-    const StateType kbkwd = kfwd/keq;
-    const StateType dkbkwd_dT = (dkfwd_dT - kbkwd*dkeq_dT)/keq;
-    for(unsigned int s = 0; s < this->n_species(); s++)
-      {
-        dkbkwd_dX_s[s] = dkfwd_dX_s[s]/keq;
-      }
-
     // If users want to use valarrays, then the output reference sizes
     // had better already match the input value sizes...
-
     StateType Rfwd = Antioch::zero_clone(kfwd);
-    StateType dRfwd_dT = Antioch::zero_clone(kbkwd);
-    StateType Rbkwd = Antioch::zero_clone(dkfwd_dT);
-    StateType dRbkwd_dT = Antioch::zero_clone(dkbkwd_dT);
+    StateType dRfwd_dT = Antioch::zero_clone(kfwd);
 
     // We need to construct using an input StateType argument if we
     // want StateType==valarray to have the right sizes
@@ -825,10 +879,8 @@ namespace Antioch
     // worse than the previous version
     /*! \todo Should we make this work arrays that get passed in so we aren't allocating/deallocating here? */
     VectorStateType dRfwd_dX_s(this->n_species(), kfwd);
-    VectorStateType dRbkwd_dX_s(this->n_species(), kbkwd);
 
     Antioch::set_zero(dRfwd_dX_s);
-    Antioch::set_zero(dRbkwd_dX_s);
 
     // pre-fill the participating species partials with the rates
     for (unsigned int r=0; r< this->n_reactants(); r++)
@@ -836,16 +888,9 @@ namespace Antioch
         dRfwd_dX_s[this->reactant_id(r)] = kfwd;
       }
     
-    for (unsigned int p=0; p < this->n_products(); p++)
-      {
-        dRbkwd_dX_s[this->product_id(p)] = kbkwd;
-      }
-
     //init
     Rfwd = kfwd;
     dRfwd_dT = dkfwd_dT;
-    Rbkwd = kbkwd;
-    dRbkwd_dT = dkbkwd_dT;
 
     // Rfwd & derivatives
     for (unsigned int ro=0; ro < this->n_reactants(); ro++)
@@ -874,46 +919,99 @@ namespace Antioch
       {
         dRfwd_dX_s[s] += facfwd * dkfwd_dX_s[s];
       }
+        
+    net_reaction_rate = Rfwd;
 
+    dnet_rate_dT = dRfwd_dT;
 
-    // Rbkwd & derivatives
-    for (unsigned int po=0; po< this->n_products(); po++)
+    for (unsigned int s = 0; s < this->n_species(); s++)
       {
-        const StateType val = 
-          ant_pow( molar_densities[this->product_id(po)],
-            static_cast<int>(this->product_stoichiometric_coefficient(po)) );
-          
-        const StateType dval = 
-          ( static_cast<CoeffType>(this->product_stoichiometric_coefficient(po))*
+        dnet_rate_dX_s[s] = dRfwd_dX_s[s];
+      }
+
+    if(_reversible)
+    {
+
+    //backward to be computed and added
+
+      StateType keq = Antioch::zero_clone(T);
+      StateType dkeq_dT = Antioch::zero_clone(T);
+
+      equilibrium_constant_and_derivative( T, P0_RT, h_RT_minus_s_R,
+                                           dh_RT_minus_s_R_dT,
+                                           keq, dkeq_dT );
+
+      const StateType kbkwd = kfwd/keq;
+      const StateType dkbkwd_dT = (dkfwd_dT - kbkwd*dkeq_dT)/keq;
+      for(unsigned int s = 0; s < this->n_species(); s++)
+        {
+          dkbkwd_dX_s[s] = dkfwd_dX_s[s]/keq;
+        }
+
+      // If users want to use valarrays, then the output reference sizes
+      // had better already match the input value sizes...
+      StateType Rbkwd = Antioch::zero_clone(dkfwd_dT);
+      StateType dRbkwd_dT = Antioch::zero_clone(dkbkwd_dT);
+
+      // We need to construct using an input StateType argument if we
+      // want StateType==valarray to have the right sizes
+      // valarray compatibility makes this a bit redundant, but not much
+      // worse than the previous version
+      /*! \todo Should we make this work arrays that get passed in so we aren't allocating/deallocating here? */
+      VectorStateType dRbkwd_dX_s(this->n_species(), kbkwd);
+
+      Antioch::set_zero(dRbkwd_dX_s);
+
+      // pre-fill the participating species partials with the rates
+      for (unsigned int p=0; p < this->n_products(); p++)
+        {
+          dRbkwd_dX_s[this->product_id(p)] = kbkwd;
+        }
+
+      //init
+      Rbkwd = kbkwd;
+      dRbkwd_dT = dkbkwd_dT;
+
+      // Rbkwd & derivatives
+      for (unsigned int po=0; po< this->n_products(); po++)
+        {
+          const StateType val = 
             ant_pow( molar_densities[this->product_id(po)],
-              static_cast<int>(this->product_stoichiometric_coefficient(po))-1 )
-            );
+              static_cast<int>(this->product_stoichiometric_coefficient(po)) );
+          
+          const StateType dval = 
+            ( static_cast<CoeffType>(this->product_stoichiometric_coefficient(po))*
+              ant_pow( molar_densities[this->product_id(po)],
+                static_cast<int>(this->product_stoichiometric_coefficient(po))-1 )
+              );
         
-        Rbkwd     *= val;
-        dRbkwd_dT *= val;
+          Rbkwd     *= val;
+          dRbkwd_dT *= val;
 
-        for (unsigned int pi=0; pi<this->n_products(); pi++)
-          {
-            dRbkwd_dX_s[this->product_id(pi)] *= (pi == po) ? dval : val;
-          }
+          for (unsigned int pi=0; pi<this->n_products(); pi++)
+            {
+              dRbkwd_dX_s[this->product_id(pi)] *= (pi == po) ? dval : val;
+            }
         
-      }
+        }
 
-    const StateType facbkwd = Rbkwd/kbkwd;
+      const StateType facbkwd = Rbkwd/kbkwd;
 
-    for (unsigned int s = 0; s < this->n_species(); s++)
-      {
-        dRbkwd_dX_s[s] += facbkwd * dkbkwd_dX_s[s];
-      }
+      for (unsigned int s = 0; s < this->n_species(); s++)
+        {
+          dRbkwd_dX_s[s] += facbkwd * dkbkwd_dX_s[s];
+        }
 
-    net_reaction_rate = Rfwd - Rbkwd;
+      net_reaction_rate -= Rbkwd;
 
-    dnet_rate_dT = dRfwd_dT - dRbkwd_dT;
+      dnet_rate_dT -= dRbkwd_dT;
 
-    for (unsigned int s = 0; s < this->n_species(); s++)
-      {
-        dnet_rate_dX_s[s] = dRfwd_dX_s[s] - dRbkwd_dX_s[s];
-      }
+      for (unsigned int s = 0; s < this->n_species(); s++)
+        {
+          dnet_rate_dX_s[s] -= dRbkwd_dX_s[s];
+        }
+
+    } //end of if(_reversible) condition
 
     return;
   }
