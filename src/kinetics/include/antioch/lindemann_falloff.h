@@ -30,11 +30,19 @@
 
 namespace Antioch{
   /*!\class LindemannFalloff
+   * Simplest falloff model (\f$F = 1\f$)
    *
    * The Lindemann model is the simplest falloff
    * model:
    * \f[
    *     F = 1
+   * \f]
+   * From which we derive:
+   * \f[
+   *    \begin{split}
+   *     \frac{\partial F}{\partial T}   & = 0\\[10pt]
+   *     \frac{\partial F}{\partial c_i} & = 0
+   *    \end{split}
    * \f]
    */
   template <typename CoeffType = double>
@@ -42,6 +50,12 @@ namespace Antioch{
   public:
     LindemannFalloff(const unsigned int nspec);
     ~LindemannFalloff();
+
+    template <typename StateType, typename VectorStateType>
+    StateType value(const StateType &T,
+                    const VectorStateType &molar_densities,
+                    const StateType &k0, 
+                    const StateType &kinf) const;
 
     template <typename StateType, typename VectorStateType>
     StateType operator()(const StateType &T,
@@ -64,13 +78,27 @@ namespace Antioch{
     unsigned int n_spec;
 
   };
+
   template<typename CoeffType>
   template <typename StateType, typename VectorStateType>
   inline
-  StateType LindemannFalloff<CoeffType>::operator()(const StateType &T,
-                                                    const VectorStateType &molar_densities,
-                                                    const StateType &k0, 
-                                                    const StateType &kinf) const
+  StateType LindemannFalloff<CoeffType>::operator()
+    (const StateType& T,
+     const VectorStateType& /* molar_densities */,
+     const StateType& /* k0 */,
+     const StateType& /* kinf */) const
+  {
+    return Antioch::constant_clone(T, 1);
+  }
+
+  template<typename CoeffType>
+  template <typename StateType, typename VectorStateType>
+  inline
+  StateType LindemannFalloff<CoeffType>::value
+    (const StateType& T,
+     const VectorStateType& /* molar_densities */,
+     const StateType& /* k0 */,
+     const StateType& /* kinf */) const
   {
     return Antioch::constant_clone(T, 1);
   }
@@ -78,15 +106,16 @@ namespace Antioch{
   template <typename CoeffType>
   template <typename StateType, typename VectorStateType>
   inline
-  void LindemannFalloff<CoeffType>::F_and_derivatives(const StateType& T, 
-                                                      const VectorStateType &molar_densities,
-                                                      const StateType &k0, 
-                                                      const StateType &dk0_dT, 
-                                                      const StateType &kinf, 
-                                                      const StateType &dkinf_dT, 
-                                                      StateType &F,
-                                                      StateType &dF_dT,
-                                                      VectorStateType &dF_dX) const
+  void LindemannFalloff<CoeffType>::F_and_derivatives
+    (const StateType& T,
+     const VectorStateType& /* molar_densities */,
+     const StateType& /* k0 */,
+     const StateType& /* dk0_dT */,
+     const StateType& /* kinf */,
+     const StateType& /* dkinf_dT */,
+     StateType& F,
+     StateType& dF_dT,
+     VectorStateType& dF_dX) const
   {
     //all derived are 0
     Antioch::set_zero(dF_dT);

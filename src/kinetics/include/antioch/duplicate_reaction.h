@@ -35,14 +35,26 @@
 namespace Antioch
 {
   //!A single reaction mechanism. 
-  /*!
+  /*!\class DuplicateReaction
+ *
     This class encapsulates a duplicate reaction process. A duplicate process
     rate constant is defined by the equation
-    \f[k(T,[M]) = \sum_i\alpha_i(T)\f]
-    with \f$\alpha_i(T)\f$ being the \f$ith\f$ kinetics model (see base class Reaction), and \f$[M]\f$
+    \f[
+        k(T,[M]) = \sum_n\alpha_n(T)
+    \f]
+    with \f$\alpha_i(T)\f$ being the \f$ith\f$ kinetics model (see base classes Reaction and KineticsType), and \f$[M]\f$
     the mixture concentration (or pressure, it's equivalent, \f$[M] = \frac{P}{\mathrm{R}T}\f$
-    in ideal gas model).  It is assumed that all the \f$\alpha_i\f$ are the same kinetisc model.
-    All reactions are assumed to be reversible. By default, the kinetics model used is the Kooij equation.
+    in an ideal gas model).  It is assumed that all the \f$\alpha_i\f$ are the same kinetics model.
+    All reactions are assumed to be reversible. By default, the kinetics model used is the KooijRate.
+
+    We have:
+    \f[
+        \begin{split}
+           \frac{\partial k(T,[M])}{\partial T}   & = \sum_n\frac{\partial \alpha_n(T)}{\partial T} \\[10pt]
+           \frac{\partial k(T,[M])}{\partial c_i} & = 0
+        \end{split}
+    \f]
+    with \f$c_i\f$ the concentration of species \f$i\f$.
   */
   template <typename CoeffType=double>
   class DuplicateReaction: public Reaction<CoeffType>
@@ -52,6 +64,7 @@ namespace Antioch
     //! Construct a single reaction mechanism.
     DuplicateReaction( const unsigned int n_species, 
                        const std::string &equation,
+                       const bool &reversible = true,
                        const KineticsModel::KineticsModel kin = KineticsModel::KOOIJ);
     
     ~DuplicateReaction();
@@ -78,8 +91,9 @@ namespace Antioch
   inline
   DuplicateReaction<CoeffType>::DuplicateReaction( const unsigned int n_species,
                                                    const std::string &equation,
+                                                   const bool &reversible,
                                                    const KineticsModel::KineticsModel kin)
-    :Reaction<CoeffType>(n_species,equation,ReactionType::DUPLICATE,kin){}
+    :Reaction<CoeffType>(n_species,equation,reversible,ReactionType::DUPLICATE,kin){}
 
 
   template <typename CoeffType>
@@ -94,8 +108,9 @@ namespace Antioch
   template <typename CoeffType>
   template<typename StateType, typename VectorStateType>
   inline
-  StateType DuplicateReaction<CoeffType>::compute_forward_rate_coefficient( const VectorStateType& molar_densities,
-                                                                            const StateType& T  ) const
+  StateType DuplicateReaction<CoeffType>::compute_forward_rate_coefficient
+    ( const VectorStateType& /* molar_densities */,
+      const StateType& T  ) const
   {
     StateType kfwd = (*this->_forward_rate[0])(T);
     for(unsigned int ir = 1; ir < this->_forward_rate.size(); ir++)
@@ -109,11 +124,12 @@ namespace Antioch
   template <typename CoeffType>
   template<typename StateType, typename VectorStateType>
   inline
-  void DuplicateReaction<CoeffType>::compute_forward_rate_coefficient_and_derivatives( const VectorStateType &molar_densities,
-                                                                                       const StateType& T, 
-                                                                                       StateType& kfwd, 
-                                                                                       StateType& dkfwd_dT,
-                                                                                       VectorStateType& dkfwd_dX) const
+  void DuplicateReaction<CoeffType>::compute_forward_rate_coefficient_and_derivatives
+    ( const VectorStateType& /* molar_densities */,
+      const StateType& T,
+      StateType& kfwd,
+      StateType& dkfwd_dT,
+      VectorStateType& dkfwd_dX) const
   {
     //dk_dT = sum_p dalpha_p_dT
     StateType kfwd_tmp = Antioch::zero_clone(T);

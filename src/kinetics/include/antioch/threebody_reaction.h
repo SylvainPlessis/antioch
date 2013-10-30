@@ -40,14 +40,26 @@
 namespace Antioch
 {
   //!A single reaction mechanism. 
-  /*!
+  /*!\class ThreeBodyReaction
+ *
     This class encapsulates a three-body reaction process. A three-body process
     rate constant is defined by the equation
-    \f[k(T,[M]) = \alpha(T)\times \sum_i\epsilon_iC_i\f]
-    with \f$\alpha(T)\f$ being a kinetics model (see base class Reaction), \f$[M]\f$
+    \f[
+        k(T,[M]) = \alpha(T)\times \sum_i\epsilon_ic_i
+    \f]
+    with \f$\alpha(T)\f$ being a kinetics model (see base classes Reaction and KineticsType), \f$[M]\f$
     the mixture concentration (or pressure, it's equivalent, \f$[M] = \frac{P}{\mathrm{R}T}\f$
-    in ideal gas model) and \f$C_i\f$ the concentration of species \f$i\f$.  All reactions are assumed to be reversible. 
-    By default, the Kooij kinetics model is used.
+    in an ideal gas model) and \f$c_i\f$ the concentration of species \f$i\f$.  All reactions are assumed to be reversible. 
+    By default, the KooijRate kinetics model is used.
+
+    We have:
+    \f[
+        \begin{split}
+           \frac{\partial k(T,[M])}{\partial T}   & = \frac{\partial \alpha(T)}{\partial T} \sum_i\epsilon_ic_i \\[10pt]
+           \frac{\partial k(T,[M])}{\partial c_i} & = \alpha(T) \epsilon_i
+        \end{split}
+    \f]
+    with \f$c_i\f$ the concentration of species \f$i\f$.
   */
   template <typename CoeffType=double>
   class ThreeBodyReaction: public Reaction<CoeffType>
@@ -57,6 +69,7 @@ namespace Antioch
     //! Construct a single reaction mechanism.
     ThreeBodyReaction( const unsigned int n_species, 
                        const std::string &equation,
+                       const bool &reversible = true,
                        const KineticsModel::KineticsModel kin = KineticsModel::KOOIJ);
     
     ~ThreeBodyReaction();
@@ -83,8 +96,9 @@ namespace Antioch
   inline
   ThreeBodyReaction<CoeffType>::ThreeBodyReaction( const unsigned int n_species,
                                                    const std::string &equation ,
+                                                   const bool &reversible,
                                                    const KineticsModel::KineticsModel kin) 
-    :Reaction<CoeffType>(n_species,equation,ReactionType::THREE_BODY,kin)
+    :Reaction<CoeffType>(n_species,equation,reversible,ReactionType::THREE_BODY,kin)
   {
     return;
   }
