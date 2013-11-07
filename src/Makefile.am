@@ -66,10 +66,10 @@ pkginclude_HEADERS += parsing/include/antioch/cea_mixture_ascii_parsing.h
 pkginclude_HEADERS += parsing/include/antioch/species_ascii_parsing.h
 
 # reactor
-include_HEADERS += reactor/include/antioch/boost_ode_integrator.h
-include_HEADERS += reactor/include/antioch/isothermal_stirred_reactor.h
-include_HEADERS += reactor/include/antioch/stirred_reactor_base.h
-include_HEADERS += reactor/include/antioch/stirred_reactor_time_integrator_base.h
+pkginclude_HEADERS += reactor/include/antioch/boost_ode_integrator.h
+pkginclude_HEADERS += reactor/include/antioch/isothermal_stirred_reactor.h
+pkginclude_HEADERS += reactor/include/antioch/stirred_reactor_base.h
+pkginclude_HEADERS += reactor/include/antioch/stirred_reactor_time_integrator_base.h
 
 # thermo
 pkginclude_HEADERS += thermo/include/antioch/cea_curve_fit.h
