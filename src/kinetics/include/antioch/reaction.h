@@ -107,7 +107,8 @@ namespace Antioch
     Reaction( const unsigned int n_species, const std::string &equation,
               const bool &reversible = true,
               const ReactionType::ReactionType type = ReactionType::ELEMENTARY,
-              const KineticsModel::KineticsModel kin = KineticsModel::KOOIJ);
+              const KineticsModel::KineticsModel kin = KineticsModel::KOOIJ,
+              const CoeffType &br = CoeffType(1.L));
     
     virtual ~Reaction();
 
@@ -138,6 +139,13 @@ namespace Antioch
     
     bool initialized() const;
 
+    /*! Set the branching ratio
+     */
+    void set_branching_ratio(const CoeffType &br);
+
+    /*! \return the branching ratio
+     */
+    CoeffType branching_ratio() const;
 
     /*! \return the reversibility state of reaction.
      */
@@ -282,6 +290,7 @@ namespace Antioch
     std::vector<unsigned int> _species_reactant_stoichiometry;
     std::vector<unsigned int> _species_product_stoichiometry;
     std::vector<int>          _species_delta_stoichiometry;
+    CoeffType                 _br;
     int _gamma;
     bool _initialized;
     bool _reversible;
@@ -571,9 +580,11 @@ namespace Antioch
                                  const std::string &equation,
                                  const bool &reversible,
                                  const ReactionType::ReactionType type,
-                                 const KineticsModel::KineticsModel kin)
+                                 const KineticsModel::KineticsModel kin,
+                                 const CoeffType &br)
     : _n_species(n_species),
       _equation(equation),
+      _br(br),
       _gamma(0),
       _initialized(false),
       _reversible(reversible),
@@ -764,6 +775,22 @@ namespace Antioch
   }
 
   template<typename CoeffType, typename VectorCoeffType>
+  inline
+  void Reaction<CoeffType,VectorCoeffType>::set_branching_ratio(const CoeffType &br)
+  {
+     _br = br;
+     return;
+  }
+
+  template<typename CoeffType, typename VectorCoeffType>
+  inline
+  CoeffType Reaction<CoeffType,VectorCoeffType>::branching_ratio() const
+  {
+    return _br;
+  }
+
+
+  template<typename CoeffType, typename VectorCoeffType>
   template <typename StateType, typename VectorStateType>
   inline
   StateType Reaction<CoeffType,VectorCoeffType>::compute_forward_rate_coefficient( const VectorStateType& molar_densities,
@@ -773,31 +800,31 @@ namespace Antioch
       {
       case(ReactionType::ELEMENTARY):
         {
-          return (static_cast<const ElementaryReaction<CoeffType>*>(this))->compute_forward_rate_coefficient(molar_densities,T);
+          return (static_cast<const ElementaryReaction<CoeffType>*>(this))->compute_forward_rate_coefficient(molar_densities,T) * _br;
         }
         break;
 
       case(ReactionType::DUPLICATE):
         {
-          return (static_cast<const DuplicateReaction<CoeffType>*>(this))->compute_forward_rate_coefficient(molar_densities,T);
+          return (static_cast<const DuplicateReaction<CoeffType>*>(this))->compute_forward_rate_coefficient(molar_densities,T) * _br;
         }
         break;
 
       case(ReactionType::THREE_BODY):
         {
-          return (static_cast<const ThreeBodyReaction<CoeffType>*>(this))->compute_forward_rate_coefficient(molar_densities,T);
+          return (static_cast<const ThreeBodyReaction<CoeffType>*>(this))->compute_forward_rate_coefficient(molar_densities,T) * _br;
         }
         break;
 
       case(ReactionType::LINDEMANN_FALLOFF):
         {
-          return (static_cast<const FalloffReaction<CoeffType,LindemannFalloff<CoeffType> >*>(this))->compute_forward_rate_coefficient(molar_densities,T);
+          return (static_cast<const FalloffReaction<CoeffType,LindemannFalloff<CoeffType> >*>(this))->compute_forward_rate_coefficient(molar_densities,T) * _br;
         }
         break;
 
       case(ReactionType::TROE_FALLOFF):
         {
-          return (static_cast<const FalloffReaction<CoeffType,TroeFalloff<CoeffType> >*>(this))->compute_forward_rate_coefficient(molar_densities,T);
+          return (static_cast<const FalloffReaction<CoeffType,TroeFalloff<CoeffType> >*>(this))->compute_forward_rate_coefficient(molar_densities,T) * _br;
         }
         break;
 
