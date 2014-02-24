@@ -91,6 +91,15 @@ namespace Antioch
                                const VectorStateType& h_RT_minus_s_R,
                                VectorStateType& mole_sources );
 
+    //! Compute species molar production and destruction rates per unit volume
+    /*! \f$ \left(mole/sec/m^3\right)\f$ */
+    template <typename VectorStateType>
+    void compute_mole_production_loss_sources( const StateType& T,
+                                               const VectorStateType& molar_densities,
+                                               const VectorStateType& h_RT_minus_s_R,
+                                                     VectorStateType& mole_production_sources,
+                                                     VectorStateType& mole_loss_sources );
+
     //! Compute species production/destruction rate derivatives
     /*! In mass units, e.g. \f$ \frac{\partial \dot{\omega}}{dT}
       [\left(mole/sec/m^3/K\right)]\f$ */
@@ -168,6 +177,72 @@ namespace Antioch
   inline
   KineticsEvaluator<CoeffType,StateType>::~KineticsEvaluator()
   {
+    return;
+  }
+
+  template<typename CoeffType, typename StateType>
+  template<typename VectorStateType>
+  inline
+  void KineticsEvaluator<CoeffType,StateType>::compute_mole_production_loss_sources( const StateType& T,
+                                                                     const VectorStateType& molar_densities,
+                                                                     const VectorStateType& h_RT_minus_s_R,
+                                                                     VectorStateType& mole_production_sources,
+                                                                     VectorStateType& mole_loss_sources )
+  {
+    //! \todo Make these assertions vector-compatible
+    // antioch_assert_greater(T, 0.0);
+    antioch_assert_equal_to( molar_densities.size(), this->n_species() );
+    antioch_assert_equal_to( h_RT_minus_s_R.size(), this->n_species() );
+    antioch_assert_equal_to( mole_production_sources.size(), this->n_species() );
+    antioch_assert_equal_to( mole_loss_sources.size(), this->n_species() );
+
+    VectorStateType net_rates,               // net rates
+                    kfwd_const, kbkwd_const, // constants
+                    kfwd, kbkwd,             // rates
+                    fwd_conc, bkwd_conc;     // concentrations
+    /*! \todo Do we need to really initialize this? */
+    Antioch::set_zero(net_rates);
+    Antioch::set_zero(kfwd_const);
+    Antioch::set_zero(kbkwd_const);
+    Antioch::set_zero(kfwd);
+    Antioch::set_zero(kbkwd);
+    Antioch::set_zero(fwd_conc);
+    Antioch::set_zero(bkwd_conc);
+
+    Antioch::set_zero(mole_production_sources);
+    Antioch::set_zero(mole_loss_sources);
+
+    // compute the requisite forward and backward rates
+    this->_reaction_set.get_reactive_scheme(T, molar_densities, h_RT_minus_s_R,
+                                            net_rates,
+                                            kfwd_const, kbkwd_const,
+                                            kfwd, kbkwd,
+                                            fwd_conc, bkwd_conc);
+
+    // compute the actual mole sources in kmol/sec/m^3
+    for (unsigned int rxn = 0; rxn < this->n_reactions(); rxn++)
+      {
+        const Reaction<CoeffType>& reaction = this->_reaction_set.reaction(rxn);
+        
+        // reactants: loss fwd, production bkwd
+        for (unsigned int r = 0; r < reaction.n_reactants(); r++)
+          {
+            const unsigned int r_id = reaction.reactant_id(r);
+
+            mole_production_sources[r_id] += kbkwd[rxn];
+            mole_loss_sources[r_id] += kfwd[rxn];
+          }
+        
+        // product contributions
+        for (unsigned int p=0; p < reaction.n_products(); p++)
+          {
+            const unsigned int p_id = reaction.product_id(p);
+
+            mole_production_sources[p_id] += kfwd[rxn];
+            mole_loss_sources[p_id] += kbkwd[rxn];
+          }
+      }
+
     return;
   }
 
