@@ -85,6 +85,8 @@ int tester(const std::string& input_name)
   Antioch::KineticsEvaluator<Scalar> kinetics( reaction_set, 0 );
 
   std::vector<Scalar> omega_dot(n_species);
+  std::vector<Scalar> omega_dot_prod(n_species);
+  std::vector<Scalar> omega_dot_loss(n_species);
   std::vector<Scalar> omega_dot_2(n_species);
   std::vector<Scalar> domega_dot_dT(n_species);
 
@@ -95,6 +97,9 @@ int tester(const std::string& input_name)
     }
   
   kinetics.compute_mass_sources( T, molar_densities, h_RT_minus_s_R, omega_dot);
+
+  kinetics.compute_mole_production_loss_sources(T, molar_densities, h_RT_minus_s_R,
+                                                     omega_dot_prod,omega_dot_loss);
 
   kinetics.compute_mass_sources_and_derivs( T, molar_densities, h_RT_minus_s_R, dh_RT_minus_s_R_dT,
                                             omega_dot_2, domega_dot_dT, domega_dot_drho_s );
@@ -146,6 +151,16 @@ int tester(const std::string& input_name)
           return_flag = 1;
         }
     }
+
+  for( unsigned int s = 0; s < n_species; s++)
+    {
+      const Scalar rel_error = abs( (omega_dot_prod[s] - omega_dot_loss[s] - omega_dot_reg[s])/omega_dot_reg[s]);
+      if( rel_error > tol )
+        {
+          return_flag = 1;
+        }
+    }
+
 
   // Regression values for domega_dot_dT
   std::vector<Scalar> domega_dot_reg_dT(n_species);
@@ -231,6 +246,16 @@ int tester(const std::string& input_name)
 		    << "domega_dot_dT(" << chem_mixture.chemical_species()[s]->species() << ") = " << domega_dot_dT[s]
 		    << ", domega_dot_reg_dT(" << chem_mixture.chemical_species()[s]->species() << ") = "
                     << domega_dot_reg_dT[s] << std::endl << std::endl;
+	}
+
+      for( unsigned int s = 0; s < n_species; s++)
+	{
+	  std::cout << std::scientific << std::setprecision(16)
+		    << "(omega_dot_prod(" << chem_mixture.chemical_species()[s]->species() << ") = " << omega_dot_prod[s]
+		    << ") - (omega_dot_loss(" << chem_mixture.chemical_species()[s]->species() << ") = " << omega_dot_loss[s]
+		    << ") = " << omega_dot_prod[s] - omega_dot_loss[s]
+		    << ", omega_dot_reg(" << chem_mixture.chemical_species()[s]->species() << ") = "
+                    << omega_dot_reg[s] << std::endl << std::endl;
 	}
 
       for( unsigned int s = 0; s < n_species; s++)

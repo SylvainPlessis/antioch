@@ -200,14 +200,6 @@ namespace Antioch
                     kfwd_const, kbkwd_const, // constants
                     kfwd, kbkwd,             // rates
                     fwd_conc, bkwd_conc;     // concentrations
-    /*! \todo Do we need to really initialize this? */
-    Antioch::set_zero(net_rates);
-    Antioch::set_zero(kfwd_const);
-    Antioch::set_zero(kbkwd_const);
-    Antioch::set_zero(kfwd);
-    Antioch::set_zero(kbkwd);
-    Antioch::set_zero(fwd_conc);
-    Antioch::set_zero(bkwd_conc);
 
     Antioch::set_zero(mole_production_sources);
     Antioch::set_zero(mole_loss_sources);
@@ -228,18 +220,20 @@ namespace Antioch
         for (unsigned int r = 0; r < reaction.n_reactants(); r++)
           {
             const unsigned int r_id = reaction.reactant_id(r);
+            const unsigned int r_stoich = reaction.reactant_stoichiometric_coefficient(r);
 
-            mole_production_sources[r_id] += kbkwd[rxn];
-            mole_loss_sources[r_id] += kfwd[rxn];
+            mole_production_sources[r_id] += static_cast<CoeffType>(r_stoich) * kbkwd[rxn];
+            mole_loss_sources[r_id] += static_cast<CoeffType>(r_stoich) * kfwd[rxn];
           }
         
         // product contributions
         for (unsigned int p=0; p < reaction.n_products(); p++)
           {
             const unsigned int p_id = reaction.product_id(p);
+            const unsigned int p_stoich = reaction.product_stoichiometric_coefficient(p);
 
-            mole_production_sources[p_id] += kfwd[rxn];
-            mole_loss_sources[p_id] += kbkwd[rxn];
+            mole_production_sources[p_id] += static_cast<CoeffType>(p_stoich) * kfwd[rxn];
+            mole_loss_sources[p_id] += static_cast<CoeffType>(p_stoich) * kbkwd[rxn];
           }
       }
 
