@@ -61,9 +61,8 @@ pkginclude_HEADERS += parsing/include/antioch/tinyxml2.h
 pkginclude_HEADERS += parsing/include/antioch/tinyxml2_imp.h
 pkginclude_HEADERS += parsing/include/antioch/species_ascii_parsing.h
 pkginclude_HEADERS += parsing/include/antioch/transport_species_ascii_parsing.h
-# parsing-kinetics
-pkginclude_HEADERS += parsing/include/antioch/read_reaction_set_data_xml.h
 # parsing-viscosity
+pkginclude_HEADERS += parsing/include/antioch/read_reaction_set_data.h
 pkginclude_HEADERS += parsing/include/antioch/blottner_parsing.h
 pkginclude_HEADERS += parsing/include/antioch/sutherland_parsing.h
 pkginclude_HEADERS += parsing/include/antioch/pure_species_viscosity_building.h
@@ -78,6 +77,7 @@ pkginclude_HEADERS += parsing/include/antioch/cea_thermo_ascii_parsing.h
 pkginclude_HEADERS += parsing/include/antioch/cea_mixture_ascii_parsing.h
 pkginclude_HEADERS += parsing/include/antioch/parsing_enum.h
 pkginclude_HEADERS += parsing/include/antioch/xml_parser.h
+pkginclude_HEADERS += parsing/include/antioch/chemkin_parser.h
 
 # thermo
 pkginclude_HEADERS += thermo/include/antioch/cea_curve_fit.h
