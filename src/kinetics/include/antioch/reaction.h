@@ -886,6 +886,10 @@ namespace Antioch
 
       } // switch(type)
 
+
+    kfwd     *= _br;
+    dkfwd_dT *= _br;
+
     return;
   }
 
