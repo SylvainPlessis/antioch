@@ -3,6 +3,8 @@
 //
 // Antioch - A Gas Dynamics Thermochemistry Library
 //
+// Copyright (C) 2014 Paul T. Bauman, Benjamin S. Kirk, Sylvain Plessis,
+//                    Roy H. Stonger
 // Copyright (C) 2013 The PECOS Development Team
 //
 // This library is free software; you can redistribute it and/or
@@ -29,6 +31,7 @@
 #include "antioch/chemical_species.h"
 #include "antioch/chemical_mixture.h"
 #include "antioch/read_reaction_set_data.h"
+#include "antioch/read_species_set.h"
 #include "antioch/units.h"
 
 #include "antioch/vector_utils.h"
@@ -115,15 +118,9 @@ int tester(const std::string &root_name)
 {
 
   std::vector<std::string> species_str_list;
-  species_str_list.push_back( "O2" );
-  species_str_list.push_back( "OH" );
-  species_str_list.push_back( "H2" );
-  species_str_list.push_back( "H2O" );
-  species_str_list.push_back( "H2O2" );
-  species_str_list.push_back( "HO2" );
-  species_str_list.push_back( "O" );
-  species_str_list.push_back( "CH3" );
-  species_str_list.push_back( "H" );
+
+  Antioch::read_species_set<Antioch::ChemKinParser<float> >(root_name + "/test_parsing.chemkin",true,species_str_list);
+
   unsigned int n_species = species_str_list.size();
 
   Antioch::ChemicalMixture<Scalar> chem_mixture( species_str_list );

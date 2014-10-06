@@ -3,6 +3,8 @@
 //
 // Antioch - A Gas Dynamics Thermochemistry Library
 //
+// Copyright (C) 2014 Paul T. Bauman, Benjamin S. Kirk, Sylvain Plessis,
+//                    Roy H. Stonger
 // Copyright (C) 2013 The PECOS Development Team
 //
 // This library is free software; you can redistribute it and/or
@@ -65,6 +67,9 @@ namespace Antioch{
 //// first local pointers
          /*! Read header of file, go to interesting part*/
          bool initialize();
+
+         /*! read SPECIES block*/
+         const std::vector<std::string> species_set();
 
          /*! go to next reaction*/
          bool reaction();
@@ -301,6 +306,7 @@ namespace Antioch{
         antioch_error();
       }
 
+      _map[ParsingKey::SPECIES_SET]      = "SPECIES";
       _map[ParsingKey::REACTION_DATA]    = "REAC"; //REACTIONS || REAC
       _map[ParsingKey::FALLOFF_LOW_NAME] = "LOW";
       _map[ParsingKey::TROE_FALLOFF]     = "TROE";
@@ -384,6 +390,44 @@ namespace Antioch{
   {
      _doc.close();
      return;
+  }
+
+  template <typename NumericType>
+  inline
+  const std::vector<std::string> ChemKinParser<NumericType>::species_set()
+  {
+      std::string line;
+      ascii_getline(_doc,line);
+
+      while(line.find(_map.at(ParsingKey::SPECIES_SET)) == std::string::npos)
+      {
+         if(!ascii_getline(_doc,line) || _doc.eof())break;
+      }
+      if(line.find(_map.at(ParsingKey::SPECIES_SET)) == std::string::npos)
+      {
+         antioch_parsing_error("ChemKin parser: haven't found SPECIES block");
+      }
+
+      std::vector<std::string> species;
+      ascii_getline(_doc,line);
+      while(line.find("END") == std::string::npos)
+      {
+         std::vector<std::string> tmp;
+         SplitString(line," ",tmp,false);
+         if(tmp.empty())
+         {
+           species.push_back(line);
+         }else
+         {
+           for(unsigned int i = 0; i < tmp.size(); i++)
+           {
+             species.push_back(tmp[i]);
+           }
+         }
+         ascii_getline(_doc,line);
+      }
+
+      return species;
   }
 
   template <typename NumericType>
