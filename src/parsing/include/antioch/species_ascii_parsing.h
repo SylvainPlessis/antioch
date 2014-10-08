@@ -259,7 +259,6 @@ namespace Antioch
     std::vector<std::string> missing;
     for(unsigned int s = 0; s < chem_mixture.chemical_species().size(); s++)
     {
-std::cout << s << "/" << chem_mixture.chemical_species().size()  << " " << chem_mixture.chemical_species()[s] << std::endl;
         if(chem_mixture.chemical_species()[s]->theta_v().empty())missing.push_back(chem_mixture.chemical_species()[s]->species());
     }
     if(!missing.empty())

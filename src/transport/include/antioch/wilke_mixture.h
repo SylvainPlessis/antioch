@@ -286,7 +286,7 @@ namespace Antioch
 
 // diffusion comes first
 // TODO: if not needed, find a way to supress Ds building and cTot computation
-     typename Antioch::rebind<VectorStateType,VectorStateType>::type Ds(mass_fractions.size(),zero_clone(mass_fractions));
+     typename Antioch::rebind<VectorStateType,VectorStateType>::type Ds(mass_fractions.size());
      _diffusion_set(T, rho / _transport_mixture.chemical_mixture().M(mass_fractions), Ds);
      wilke_diffusion_rule(_transport_mixture.chemical_mixture(), mass_fractions, Ds, ds, typename physical_tag<typename Diffusion::model>::diffusion_species_type ());
 
