@@ -231,13 +231,14 @@ namespace Antioch
     kin_keyword["photochemistry"]         = KineticsModel::PHOTOCHEM;
 
     std::map<KineticsModel::KineticsModel,unsigned int> kinetics_model_map;
-    kinetics_model_map[KineticsModel::HERCOURT_ESSEN] = 0;
-    kinetics_model_map[KineticsModel::BERTHELOT]      = 1;
-    kinetics_model_map[KineticsModel::ARRHENIUS]      = 2;
-    kinetics_model_map[KineticsModel::BHE]            = 3;
-    kinetics_model_map[KineticsModel::KOOIJ]          = 4;
-    kinetics_model_map[KineticsModel::VANTHOFF]       = 6;
-    kinetics_model_map[KineticsModel::PHOTOCHEM]      = 7;
+    kinetics_model_map[KineticsModel::CONSTANT]       = 0;
+    kinetics_model_map[KineticsModel::HERCOURT_ESSEN] = 1;
+    kinetics_model_map[KineticsModel::BERTHELOT]      = 2;
+    kinetics_model_map[KineticsModel::ARRHENIUS]      = 3;
+    kinetics_model_map[KineticsModel::BHE]            = 4;
+    kinetics_model_map[KineticsModel::KOOIJ]          = 5;
+    kinetics_model_map[KineticsModel::VANTHOFF]       = 7;
+    kinetics_model_map[KineticsModel::PHOTOCHEM]      = 8;
 
     std::vector<std::string> models; 
     models.push_back("Constant");
@@ -284,7 +285,7 @@ namespace Antioch
             }
             typeReaction = proc_keyword[parser.reaction_chemical_process()];
           }
-            
+
         bool reversible(parser.reaction_reversible());
         if (verbose) std::cout << "reversible: " << reversible << std::endl;
        
@@ -330,7 +331,7 @@ namespace Antioch
 
                 if(verbose) std::cout  << "\n    " << molecules_pairs[p].first << " " << molecules_pairs[p].second;
 
-                if( !chem_mixture.active_species_name_map().count( molecules_pairs[p].first ) )
+                if( !chem_mixture.species_name_map().count( molecules_pairs[p].first ) )
                   {
                     relevant_reaction = false;
                     if (verbose) std::cout << "\n     -> skipping this reaction (no reactant " << molecules_pairs[p].first << ")";
@@ -338,7 +339,7 @@ namespace Antioch
                 else
                   {
                     my_rxn->add_reactant( molecules_pairs[p].first,
-                                         chem_mixture.active_species_name_map().find( molecules_pairs[p].first )->second,
+                                         chem_mixture.species_name_map().find( molecules_pairs[p].first )->second,
                                          molecules_pairs[p].second );
                     order_reaction += molecules_pairs[p].second;
                   }
@@ -358,7 +359,7 @@ namespace Antioch
 
                 if(verbose) std::cout  << "\n    " << molecules_pairs[p].first << " " << molecules_pairs[p].second;
 
-                if( !chem_mixture.active_species_name_map().count( molecules_pairs[p].first ) )
+                if( !chem_mixture.species_name_map().count( molecules_pairs[p].first ) )
                   {
                     relevant_reaction = false;
                     if (verbose) std::cout << "\n     -> skipping this reaction (no product " << molecules_pairs[p].first << ")";
@@ -366,7 +367,7 @@ namespace Antioch
                 else
                   {
                     my_rxn->add_product( molecules_pairs[p].first,
-                                        chem_mixture.active_species_name_map().find( molecules_pairs[p].first )->second,
+                                        chem_mixture.species_name_map().find( molecules_pairs[p].first )->second,
                                         molecules_pairs[p].second );
                   }
               }
@@ -690,10 +691,10 @@ namespace Antioch
 
                     // it is possible that the efficiency is specified for a species we are not
                     // modeling - so only add the efficiency if it is included in our list
-                    if( chem_mixture.active_species_name_map().count( efficiencies[p].first ) )
+                    if( chem_mixture.species_name_map().count( efficiencies[p].first ) )
                       {
                         my_rxn->set_efficiency( efficiencies[p].first,
-                                               chem_mixture.active_species_name_map().find( efficiencies[p].first )->second,
+                                               chem_mixture.species_name_map().find( efficiencies[p].first )->second,
                                                efficiencies[p].second );
                       }
                }

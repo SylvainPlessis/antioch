@@ -175,6 +175,9 @@ namespace Antioch{
           /*! look for q when given r = p / q*/
           unsigned int factor_to_int(NumericType number) const;
 
+          /*! verify if line is a new reaction*/
+          bool next_reaction(const std::string & line);
+
           /*! Never use default constructor*/
           ChemKinParser();
           std::ifstream                    _doc;
@@ -211,6 +214,8 @@ namespace Antioch{
 
           std::map<std::string,std::string> _unit_custom_ea;
           std::map<std::string,std::string> _unit_custom_A;
+
+          std::string cache_line;
 
 /*ChemKin spec*/
 
@@ -299,7 +304,7 @@ namespace Antioch{
   inline
   ChemKinParser<NumericType>::ChemKinParser(const std::string &filename)
   {
-    _doc.open(filename.c_str(),std::ios_base::binary);
+    _doc.open(filename.c_str());
     if(!_doc.good())
       {
         std::cerr << "ERROR: unable to load ChemKin file " << filename << std::endl;
@@ -464,10 +469,16 @@ namespace Antioch{
       /* reaction */
       bool reac = true;
       std::string line;
-      ascii_getline(_doc,line);
+      if(cache_line.empty())
+      {
+        ascii_getline(_doc,line);
+      }else
+      {
+        line = cache_line;
+      }
 
-// skip empty lines
-      while(line.empty() || _spec.is_comment(line[0]))                                         // fully commented alone line
+      // skip empty lines
+      while(line.empty() || _spec.is_comment(line[0])) // fully commented alone line
       {
         if(!ascii_getline(_doc,line)  || // getline
            line.find(_spec.end_tag()) != std::string::npos || _doc.eof()     // end of file
@@ -478,10 +489,10 @@ namespace Antioch{
         }
       }
 
-      //rection found
+      //reaction found
       if(reac)
       {
-        while(!line.empty())
+        while(!this->next_reaction(line))
         {
           if(line.find(_spec.end_tag()) != std::string::npos || _doc.eof()) // equivalent
           {
@@ -495,6 +506,7 @@ namespace Antioch{
           }
           ascii_getline(_doc,line);
         }
+        cache_line = line;
       }
 
       return reac;
@@ -746,6 +758,7 @@ namespace Antioch{
      if(line.find(_spec.delim().at(_spec.REVERSIBLE)) != std::string::npos) //equation a beta ea
      {
         this->parse_equation_coef(line);
+        if(cache_line.empty())cache_line = line; //init
         _nrates++;
      }
      else if(line.find(_spec.duplicate()) != std::string::npos)
@@ -786,7 +799,6 @@ namespace Antioch{
 // printed several times, we care only for the
 // first
     if(_reactants.empty())this->parse_equation(equation);
-
    }
 
    template <typename NumericType>
@@ -866,7 +878,6 @@ namespace Antioch{
         }
      }
 
-
      // checking for real stoichiometric coeffs
      bool real(false);
      for(unsigned int i = 0; i < _reactants.size(); i++)
@@ -898,7 +909,6 @@ namespace Antioch{
     }
     _pow_unit--;
     if(_chemical_process == "ThreeBody")_pow_unit++;
-
   }
 
   template <typename NumericType>
@@ -1071,6 +1081,20 @@ namespace Antioch{
     const NumericType eps(1e-3);
     return (std::abs(number - std::floor(number)) > eps);
   }
+
+  template <typename NumericType>
+  inline
+  bool ChemKinParser<NumericType>::next_reaction(const std::string & input_line)
+  {
+     bool out(false);
+     if(input_line.find(_spec.delim().at(ChemKinSpec::REVERSIBLE)) != std::string::npos || 
+         input_line.find(_spec.end_tag()) != std::string::npos)out = true;
+
+     if(input_line == cache_line || cache_line.empty())out = false; // to be defined
+
+     return out;
+  }
+  
 
 }//end namespace Antioch
 
