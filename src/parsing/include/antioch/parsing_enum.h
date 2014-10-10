@@ -3,8 +3,11 @@
 //
 // Antioch - A Gas Dynamics Thermochemistry Library
 //
+<<<<<<< HEAD
 // Copyright (C) 2014 Paul T. Bauman, Benjamin S. Kirk, Sylvain Plessis,
 //                    Roy H. Stonger
+=======
+>>>>>>> input_parsing_formats
 // Copyright (C) 2013 The PECOS Development Team
 //
 // This library is free software; you can redistribute it and/or

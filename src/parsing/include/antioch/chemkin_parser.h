@@ -178,6 +178,9 @@ namespace Antioch{
           /*! verify if line is a new reaction*/
           bool next_reaction(const std::string & line);
 
+          /*! finding next line that might be a reaction */
+          bool next_meaningful_line(std::string & line);
+
           /*! Never use default constructor*/
           ChemKinParser();
           std::ifstream                    _doc;
@@ -215,7 +218,8 @@ namespace Antioch{
           std::map<std::string,std::string> _unit_custom_ea;
           std::map<std::string,std::string> _unit_custom_A;
 
-          std::string cache_line;
+          std::string _cached_line;
+          bool        _duplicate_process;
 
 /*ChemKin spec*/
 
@@ -302,7 +306,8 @@ namespace Antioch{
 
   template <typename NumericType>
   inline
-  ChemKinParser<NumericType>::ChemKinParser(const std::string &filename)
+  ChemKinParser<NumericType>::ChemKinParser(const std::string &filename):
+        _duplicate_process(false)
   {
     _doc.open(filename.c_str());
     if(!_doc.good())
@@ -443,6 +448,7 @@ namespace Antioch{
       _reversible = true;
       _nrates     = 0;
       _crates     = 0;
+      _duplicate_process = false;
 
       _pow_unit   = 0;
 
@@ -469,24 +475,13 @@ namespace Antioch{
       /* reaction */
       bool reac = true;
       std::string line;
-      if(cache_line.empty())
+      if(_cached_line.empty())
       {
         ascii_getline(_doc,line);
+        reac = this->next_meaningful_line(line);
       }else
       {
-        line = cache_line;
-      }
-
-      // skip empty lines
-      while(line.empty() || _spec.is_comment(line[0])) // fully commented alone line
-      {
-        if(!ascii_getline(_doc,line)  || // getline
-           line.find(_spec.end_tag()) != std::string::npos || _doc.eof()     // end of file
-           )
-        {
-           reac = false;
-           break;
-        }
+        line = _cached_line; // already meaningful
       }
 
       //reaction found
@@ -499,14 +494,15 @@ namespace Antioch{
              reac = false;
              break;
           }
-          if(line.find(_spec.comment()) != std::string::npos)line.erase(line.find(_spec.comment()),std::string::npos); //supress comment
-          if(!_spec.is_comment(line[0]))
-          {
-             this->parse_a_line(line);
-          }
-          ascii_getline(_doc,line);
+           // comment out
+          if(line.find(_spec.comment()) != std::string::npos)line.erase(line.find(_spec.comment()),std::string::npos); 
+           // parsing
+          this->parse_a_line(line);
+           // getting on to the next line
+          this->next_meaningful_line(line);
+          std::cout << line << "\" ";
         }
-        cache_line = line;
+        _cached_line = line;
       }
 
       return reac;
@@ -758,12 +754,13 @@ namespace Antioch{
      if(line.find(_spec.delim().at(_spec.REVERSIBLE)) != std::string::npos) //equation a beta ea
      {
         this->parse_equation_coef(line);
-        if(cache_line.empty())cache_line = line; //init
+        if(_cached_line.empty())_cached_line = line; //init
         _nrates++;
      }
      else if(line.find(_spec.duplicate()) != std::string::npos)
      {
         _chemical_process = "Duplicate";
+        _duplicate_process = !_duplicate_process;
      }else if(line.find(_spec.parser()) != std::string::npos)
      {
         this->parse_coefficients_line(line);
@@ -1088,11 +1085,33 @@ namespace Antioch{
   {
      bool out(false);
      if(input_line.find(_spec.delim().at(ChemKinSpec::REVERSIBLE)) != std::string::npos || 
-         input_line.find(_spec.end_tag()) != std::string::npos)out = true;
+        input_line.find(_spec.end_tag()) != std::string::npos) out = true;
 
-     if(input_line == cache_line || cache_line.empty())out = false; // to be defined
+     if(input_line == _cached_line || _cached_line.empty() ||
+        _duplicate_process )out = false; // to be defined
 
      return out;
+  }
+
+  template <typename NumericType>
+  inline
+  bool ChemKinParser<NumericType>::next_meaningful_line(std::string & line)
+  {
+      bool out(true);
+      // skip empty lines
+      ascii_getline(_doc,line);
+      while(line.empty() || _spec.is_comment(line[0])) // fully commented alone line
+      {
+        if(!ascii_getline(_doc,line)  || // getline
+           line.find(_spec.end_tag()) != std::string::npos || _doc.eof()     // end of file
+           )
+        {
+           out = false;
+           break;
+        }
+      }
+
+      return out;
   }
   
 
