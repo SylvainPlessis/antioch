@@ -479,31 +479,28 @@ namespace Antioch{
       {
         ascii_getline(_doc,line);
         reac = this->next_meaningful_line(line);
+        _cached_line = line; // already meaningful
       }else
       {
         line = _cached_line; // already meaningful
       }
 
       //reaction found
-      if(reac)
+      while(!this->next_reaction(line))
       {
-        while(!this->next_reaction(line))
+        if(line.find(_spec.end_tag()) != std::string::npos || _doc.eof()) // equivalent
         {
-          if(line.find(_spec.end_tag()) != std::string::npos || _doc.eof()) // equivalent
-          {
-             reac = false;
-             break;
-          }
-           // comment out
-          if(line.find(_spec.comment()) != std::string::npos)line.erase(line.find(_spec.comment()),std::string::npos); 
-           // parsing
-          this->parse_a_line(line);
-           // getting on to the next line
-          this->next_meaningful_line(line);
-          std::cout << line << "\" ";
+          reac = false;
+          break;
         }
-        _cached_line = line;
+        // comment out
+        if(line.find(_spec.comment()) != std::string::npos)line.erase(line.find(_spec.comment()),std::string::npos); 
+        // parsing
+        this->parse_a_line(line);
+        // getting on to the next line
+        this->next_meaningful_line(line);
       }
+      _cached_line = line;
 
       return reac;
   }
@@ -754,13 +751,12 @@ namespace Antioch{
      if(line.find(_spec.delim().at(_spec.REVERSIBLE)) != std::string::npos) //equation a beta ea
      {
         this->parse_equation_coef(line);
-        if(_cached_line.empty())_cached_line = line; //init
         _nrates++;
      }
      else if(line.find(_spec.duplicate()) != std::string::npos)
      {
         _chemical_process = "Duplicate";
-        _duplicate_process = !_duplicate_process;
+        _duplicate_process = true;
      }else if(line.find(_spec.parser()) != std::string::npos)
      {
         this->parse_coefficients_line(line);
@@ -1085,10 +1081,63 @@ namespace Antioch{
   {
      bool out(false);
      if(input_line.find(_spec.delim().at(ChemKinSpec::REVERSIBLE)) != std::string::npos || 
-        input_line.find(_spec.end_tag()) != std::string::npos) out = true;
+        input_line.find(_spec.end_tag()) != std::string::npos) out = true; //
 
-     if(input_line == _cached_line || _cached_line.empty() ||
-        _duplicate_process )out = false; // to be defined
+     if(input_line == _cached_line || _cached_line.empty()) out = false; // current reaction
+
+     if(_duplicate_process && input_line.find(_spec.delim().at(ChemKinSpec::REVERSIBLE)) != std::string::npos)// if we find a reaction and it is the same than the cached one
+     {
+        out = false; // we suppose in duplicate reaction
+        std::vector<std::string> inputs;
+        SplitString(input_line," ",inputs,false);
+        if(inputs.size() < 4)antioch_parsing_error("ChemKin parser: unrecognized reaction input line:\n" + input_line);
+         // getting the equation
+        std::string test_eq;
+        for(unsigned int i = 0; i < inputs.size() - 3; i++)
+        {
+             test_eq += inputs[i];
+        }
+
+          // the reactants and products should appear in the equation
+        std::vector<unsigned int> index_reac(_reactants.size(),0);
+        for(unsigned int ir = 0; ir < _reactants.size(); ir++)
+        {
+            if(input_line.find(_reactants[ir].first) == std::string::npos) // not the same reaction
+            {
+               out = true;
+               break;
+            }
+            index_reac.push_back(input_line.find(_reactants[ir].first));
+        }
+
+        if(!out)
+        {
+          for(unsigned int ip = 0; ip < _products.size(); ip++)
+          {
+              if(input_line.find(_products[ip].first) == std::string::npos) // not the same reaction
+              {
+                 out = true;
+                 break;
+              }
+              for(unsigned int i = 0; i < index_reac.size(); i++) // products appear after reactants
+              {
+                        // if the product appears before the reactant
+                if(input_line.find(_products[ip].first) < index_reac[i]) // not the same reaction
+                {
+                   out = true;
+                        // now in case someone wants the same molecule as reactant and product
+                   for(unsigned int jr = 0; jr < _reactants.size(); jr++)
+                   {
+                        // find because H2O triggers H2O2...
+                      if(_reactants[jr].first.find(_products[ip].first) != std::string::npos)out = false;
+                   }
+                   break;
+                }
+              }
+              if(out)break;
+          }
+        }
+     }
 
      return out;
   }
