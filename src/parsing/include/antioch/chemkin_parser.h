@@ -477,7 +477,6 @@ namespace Antioch{
       std::string line;
       if(_cached_line.empty())
       {
-        ascii_getline(_doc,line);
         reac = this->next_meaningful_line(line);
         _cached_line = line;
       }else
