@@ -473,16 +473,17 @@ namespace Antioch{
       _Troe_T3    = -1.;
 
       /* reaction */
-      bool reac = true;
+      bool reac = false;
       std::string line;
       if(_cached_line.empty())
       {
         ascii_getline(_doc,line);
         reac = this->next_meaningful_line(line);
-        _cached_line = line; // already meaningful
+        _cached_line = line;
       }else
       {
         line = _cached_line; // already meaningful
+        reac = true;
       }
 
       //reaction found
