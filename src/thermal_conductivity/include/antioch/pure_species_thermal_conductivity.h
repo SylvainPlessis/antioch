@@ -142,7 +142,7 @@ namespace Antioch{
 
       return ( mu  * _thermo.cv_trans(s) * five_over_two * (one - _thermo.cv_rot(s) / _thermo.cv_trans(s) * A_B) +
                rho * Dss  * ( _thermo.cv_rot(s) * (one + A_B) +
-                              _thermo.cv_vib(s,T) ) ) /_M ;
+                              _thermo.cv_vib(s,T) ) ) ;
   }
 
 } //end namespace Antioch
