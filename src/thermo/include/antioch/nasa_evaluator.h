@@ -76,6 +76,23 @@ namespace Antioch
       >::type 
     cv( const TempCache<StateType>& cache, const VectorStateType& mass_fractions ) const;
 
+        // quick hack for now
+    template<typename StateType>
+    ANTIOCH_AUTO(StateType)
+    cv_vib( unsigned int species, const StateType &T ) const
+    ANTIOCH_AUTOFUNC(StateType,
+		     this->cp<StateType>(TempCache<StateType>(T),species) -
+		     this->chem_mixture().R(species) * (CoeffType)3.5L)
+    CoeffType
+    cv_trans( unsigned int species ) const
+    ANTIOCH_AUTOFUNC(StateType,
+		     this->chem_mixture().R(species) * (CoeffType)1.5L)
+
+    CoeffType
+    cv_rot( unsigned int species ) const
+    ANTIOCH_AUTOFUNC(StateType,
+		     this->chem_mixture().R(species))
+
     template<typename StateType>
     ANTIOCH_AUTO(StateType)
     h( const TempCache<StateType>& cache, unsigned int species ) const

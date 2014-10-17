@@ -106,7 +106,7 @@ namespace Antioch{
         _thermo(t),
         _rot(Z_298K,LJ_depth),
         _M(M),
-        five_over_two(5.L/2.L),
+        five_over_two(2.5L),
         five_over_three(5.L/3.L),
         two_over_pi(2.L/Constants::pi<CoeffType>()),
         one(1.L)
@@ -138,10 +138,10 @@ namespace Antioch{
         PureSpeciesThermalConductivity<ThermoEvaluator,CoeffType>::operator()(const unsigned int s, const StateType& mu, const StateType T, const StateType & rho, const StateType & Dss) const
   {
       StateType rho_d_m = rho * Dss / mu; // only once instead of twice
-      StateType A_B = this->A(rho_d_m) / this->B(s, T, rho_d_m);
+      StateType A_B = two_over_pi * this->A(rho_d_m) / this->B(s, T, rho_d_m);
 
-      return ( mu  * _thermo.cv_trans(s) * five_over_two * (one - two_over_pi * _thermo.cv_rot(s) / _thermo.cv_trans(s) * A_B) +
-               rho * Dss  * ( _thermo.cv_rot(s) * (one + two_over_pi * A_B) +
+      return ( mu  * _thermo.cv_trans(s) * five_over_two * (one - _thermo.cv_rot(s) / _thermo.cv_trans(s) * A_B) +
+               rho * Dss  * ( _thermo.cv_rot(s) * (one + A_B) +
                               _thermo.cv_vib(s,T) ) ) /_M ;
   }
 
