@@ -88,6 +88,9 @@ namespace Antioch
     const StateType k(unsigned int s, const StateType & mu, const StateType & T, const VectorStateType & mass_fractions, const StateType &rho = 0) const;
 
     template <typename StateType, typename VectorStateType>
+    void k(const VectorStateType & mu, const StateType & T, const VectorStateType & mass_fractions, const StateType &rho, VectorStateType & k) const;
+
+    template <typename StateType, typename VectorStateType>
     void D_and_k(const VectorStateType & mu, const StateType & T, const StateType & rho, 
                  const VectorStateType & mass_fractions, VectorStateType & k, VectorStateType & D) const;
 
@@ -268,6 +271,23 @@ namespace Antioch
      _thermal_conduction_set(s,mu,Ds,T,rho,k);
 
      return k;
+  }
+
+  template<typename Diffusion, typename Viscosity, typename ThermalConduction, typename Mixture, typename ThermoEvaluator, typename CoeffType>
+  template <typename StateType, typename VectorStateType>
+  inline
+  void WilkeMixture<Diffusion,Viscosity,ThermalConduction, Mixture, ThermoEvaluator,CoeffType>::k(const VectorStateType & mu, 
+                                                                                   const StateType & T, const VectorStateType & mass_fractions, 
+                                                                                   const StateType &rho, VectorStateType & k) const
+  {
+     antioch_assert_equal_to(mu.size(),k.size());
+     antioch_assert_equal_to(mu.size(),mass_fractions.size());
+     antioch_assert_equal_to(mu.size(),_transport_mixture.n_species());
+
+     for(unsigned int s = 0; s < mu.size(); s++)
+     {
+        k[s] = this->k(s,mu[s],T,mass_fractions,rho);
+     }
   }
 
 
