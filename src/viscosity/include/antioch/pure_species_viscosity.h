@@ -178,8 +178,7 @@ namespace Antioch
         _dipole_moment(dipole_moment),
         _mass(mass),
         _delta_star(ant_pow(_dipole_moment * Units<CoeffType>("D").get_SI_factor(),2) /             
-                     ( _LJ.depth() * CoeffType(8.L) * Constants::pi<CoeffType>() * Constants::vacuum_permittivity<CoeffType>() * 
-                           Constants::Boltzmann_constant<CoeffType>() * ant_pow(_LJ.diameter(),3) ))
+                     ( _LJ.depth() * Constants::Boltzmann_constant<CoeffType>() * CoeffType(2.L) * ant_pow(_LJ.diameter() * Units<CoeffType>("ang").get_SI_factor(),3) ))
   {
      this->build_interpolation();
      return;
@@ -199,8 +198,7 @@ namespace Antioch
         _dipole_moment(coeffs[2]),
         _mass(coeffs[3]),
         _delta_star(ant_pow(_dipole_moment * Units<CoeffType>("D").get_SI_factor(),2) /
-                     ( _LJ.depth() * CoeffType(8.L) * Constants::pi<CoeffType>() * Constants::vacuum_permittivity<CoeffType>() * 
-                           Constants::Boltzmann_constant<CoeffType>() * ant_pow(_LJ.diameter(),3) ))
+                     ( _LJ.depth() * Constants::Boltzmann_constant<CoeffType>() * CoeffType(2.L) * ant_pow(_LJ.diameter() * Units<CoeffType>("ang").get_SI_factor(),3) ))
 #endif
   {
 #ifndef NDEBUG
@@ -211,8 +209,7 @@ namespace Antioch
         _dipole_moment   = coeffs[2];
         _mass            = coeffs[3];
         _delta_star      = ant_pow(_dipole_moment * Units<CoeffType>("D").get_SI_factor(),2) /
-                     ( _LJ.depth() * CoeffType(8.L) * Constants::pi<CoeffType>() * Constants::vacuum_permittivity<CoeffType>() * 
-                           Constants::Boltzmann_constant<CoeffType>() * ant_pow(_LJ.diameter(),3) );
+                     ( _LJ.depth() * Constants::Boltzmann_constant<CoeffType>() * CoeffType(2.L) * ant_pow(_LJ.diameter() * Units<CoeffType>("ang").get_SI_factor(),3) );
 #endif
      this->build_interpolation();
      return;
@@ -252,8 +249,7 @@ namespace Antioch
      _dipole_moment = dipole_moment;
      _mass = mass;
      _delta_star = (ant_pow(_dipole_moment * Units<CoeffType>("D").get_SI_factor(),2) /
-                     ( _LJ.depth() * CoeffType(8.L) * Constants::pi<CoeffType>() * Constants::vacuum_permittivity<CoeffType>() * 
-                           Constants::Boltzmann_constant<CoeffType>() * ant_pow(_LJ.diameter(),3) ));
+                     ( _LJ.depth() * Constants::Boltzmann_constant<CoeffType>() * CoeffType(2.L) * ant_pow(_LJ.diameter() * Units<CoeffType>("ang").get_SI_factor(),3) ));
 
 //redefining collision integral
     this->build_interpolation();

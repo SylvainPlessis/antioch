@@ -70,28 +70,28 @@ H2O                   572.400     2.605     1.844     0.000     4.000
 
 //  N2
    const Scalar N2_LJ_eps(97.530L);
-   const Scalar N2_LJ_depth(3.621L);
+   const Scalar N2_LJ_dia(3.621L);
    const Scalar N2_dipole(0.L);
    const Scalar N2_polar(1.760L);
    const Scalar N2_Zrot(4.L);
    const Scalar N2_mass(28.016e-3L);
 // CH4
    const Scalar CH4_LJ_eps(141.400L);
-   const Scalar CH4_LJ_depth(3.746L);
+   const Scalar CH4_LJ_dia(3.746L);
    const Scalar CH4_dipole(0.L);
    const Scalar CH4_polar(2.6L);
    const Scalar CH4_Zrot(13.L);
    const Scalar CH4_mass(16.043e-3L);
 // H2O
    const Scalar H2O_LJ_eps(572.4L);
-   const Scalar H2O_LJ_depth(2.605L);
+   const Scalar H2O_LJ_dia(2.605L);
    const Scalar H2O_dipole(1.844L);
    const Scalar H2O_polar(0.L);
    const Scalar H2O_Zrot(4.L);
    const Scalar H2O_mass(18.016e-3L);
-  Antioch::TransportSpecies<Scalar> N2(0,N2_LJ_eps,N2_LJ_depth,N2_dipole,N2_polar,N2_Zrot,N2_mass),
-                                    CH4(1,CH4_LJ_eps,CH4_LJ_depth,CH4_dipole,CH4_polar,CH4_Zrot,CH4_mass),
-                                    H2O(2,H2O_LJ_eps,H2O_LJ_depth,H2O_dipole,H2O_polar,H2O_Zrot,H2O_mass);
+  Antioch::TransportSpecies<Scalar> N2(0,N2_LJ_eps,N2_LJ_dia,N2_dipole,N2_polar,N2_Zrot,N2_mass),
+                                    CH4(1,CH4_LJ_eps,CH4_LJ_dia,CH4_dipole,CH4_polar,CH4_Zrot,CH4_mass),
+                                    H2O(2,H2O_LJ_eps,H2O_LJ_dia,H2O_dipole,H2O_polar,H2O_Zrot,H2O_mass);
 
 
   Antioch::MolecularBinaryDiffusion<Scalar,Antioch::GSLSpliner> 

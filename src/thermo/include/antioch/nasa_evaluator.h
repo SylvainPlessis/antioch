@@ -256,8 +256,9 @@ namespace Antioch
   StateType NASAEvaluator<CoeffType,NASAFit>::h_over_RT( const TempCache<StateType>& cache, unsigned int species ) const
   {
     antioch_assert_less( species, this->n_species() );
-    antioch_assert_less( _nasa_mixture.curve_fit(species).interval(cache.T),
-                         _nasa_mixture.curve_fit(species).n_intervals() );
+    // FIXME - we need assert_less to be vectorizable
+    // antioch_assert_less( _nasa_mixture.curve_fit(species).interval(cache.T),
+    //                     _nasa_mixture.curve_fit(species).n_intervals() );
     
     return this->_nasa_mixture.curve_fit(species).h_over_RT(cache);
   }

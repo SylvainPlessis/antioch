@@ -135,10 +135,10 @@ namespace Antioch{
 // parameter for the couple
           Species   _i,_j;
           CoeffType _reduced_mass;
-          CoeffType _reduced_dipole_moment;
           CoeffType _xi; // simplify calculations
           CoeffType _reduced_LJ_diameter;
           CoeffType _reduced_LJ_depth;
+          CoeffType _reduced_dipole_moment;
 
 
   };
@@ -166,12 +166,12 @@ namespace Antioch{
      _i(si.species()),
      _j(sj.species()),
      _reduced_mass((si.species() == sj.species())?si.M():(si.M() * sj.M()) / (si.M() + sj.M())), // kg/mol
-     _reduced_dipole_moment(ant_sqrt(si.dipole_moment() * sj.dipole_moment())),
      _xi((si.polar() == sj.polar())?1L:this->composed_xi(si,sj)),
      _reduced_LJ_diameter(0.5L * (si.LJ_diameter() + sj.LJ_diameter()) * Units<CoeffType>("ang").get_SI_factor() *_xi * _xi), // 1/2 * (sigma_1 + sigma_2) * xi^2
-     _reduced_LJ_depth(ant_sqrt(si.LJ_depth() * sj.LJ_depth()) * ant_pow(_xi,-1.L/6.L)) // sqrt(eps_1 * eps_2) * xi^(-1/6)
+     _reduced_LJ_depth(ant_sqrt(si.LJ_depth() * sj.LJ_depth()) * ant_pow(_xi,-1.L/6.L)), // sqrt(eps_1 * eps_2) * xi^(-1/6)
+     _reduced_dipole_moment((si.dipole_moment() * sj.dipole_moment() * ant_pow(Units<CoeffType>("D").get_SI_factor(),2 )) / 
+                            ((CoeffType(2.L) * _reduced_LJ_depth * Constants::Boltzmann_constant<CoeffType>() * ant_pow(_reduced_LJ_diameter,3) ))) // mu^2 / (2*eps*sigma^3)
   {
-     
      this->build_interpolation();
 
      return;
@@ -188,18 +188,18 @@ namespace Antioch{
      _i(0),
      _j(0),
      _reduced_mass(-1),
-     _reduced_dipole_moment(-1),
      _xi(-1),
      _reduced_LJ_diameter(-1),
-     _reduced_LJ_depth(-1)
+     _reduced_LJ_depth(-1),
+     _reduced_dipole_moment(-1)
 #else
      _i(species[0].species()),
      _j(species[1].species()),
      _reduced_mass((species[0].species() == species[1].species())?species[0].M():(species[0].M() * species[1].M()) / (species[0].M() + species[1].M())), // kg/mol
-     _reduced_dipole_moment(ant_sqrt(species[0].dipole_moment() * species[1].dipole_moment())),
      _xi((species[0].polar() == species[1].polar())?1L:this->composed_xi(species[0],species[1])),
      _reduced_LJ_diameter(0.5L * (species[0].LJ_diameter() + species[1].LJ_diameter()) * Units<CoeffType>("ang").get_SI_factor() *_xi * _xi), // 1/2 * (sigma_1 + sigma_2) * xi^2
-     _reduced_LJ_depth(ant_sqrt(species[0].LJ_depth() * species[1].LJ_depth()) * ant_pow(_xi,-1.L/6.L)) // sqrt(eps_1 * eps_2) * xi^(-1/6)
+     _reduced_LJ_depth(ant_sqrt(species[0].LJ_depth() * species[1].LJ_depth()) * ant_pow(_xi,-1.L/6.L)), // sqrt(eps_1 * eps_2) * xi^(-1/6)
+     _reduced_dipole_moment((species[0].dipole_moment() * species[1].dipole_moment())/ ((CoeffType(2.L)*_reduced_LJ_depth * Constants::Boltzmann_constant<CoeffType>() * ant_pow(_reduced_LJ_diameter,3))))
 #endif
   {
 #ifndef NDEBUG
@@ -227,10 +227,10 @@ namespace Antioch{
      _i                     = si.species();
      _j                     = sj.species();
      _reduced_mass          = (si.species() == sj.species())?si.M():(si.M() * sj.M()) / (si.M() + sj.M());
-     _reduced_dipole_moment = ant_sqrt(si.dipole_moment() * sj.dipole_moment());
      _xi                    = (si.polar() == sj.polar())?1L:this->composed_xi(si,sj);
      _reduced_LJ_diameter   = 0.5L * (si.LJ_diameter() + sj.LJ_diameter()) * Units<CoeffType>("ang").get_SI_factor() *_xi * _xi;
      _reduced_LJ_depth      = ant_sqrt(si.LJ_depth() * sj.LJ_depth()) * ant_pow(_xi,-1.L/6.L);
+     _reduced_dipole_moment = (si.dipole_moment() * sj.dipole_moment()) / ((CoeffType(2.L)*_reduced_LJ_depth * Constants::Boltzmann_constant<CoeffType>() * ant_pow(_reduced_LJ_diameter,3)));
   }
 
   template <typename CoeffType, typename Interpolator>
@@ -240,10 +240,10 @@ namespace Antioch{
      _i                     = species[0].species();
      _j                     = species[1].species();
      _reduced_mass          = (species[0].species() == species[1].species())?species[0].M():(species[0].M() * species[1].M()) / (species[0].M() + species[1].M());
-     _reduced_dipole_moment = ant_sqrt(species[0].dipole_moment() * species[1].dipole_moment());
      _xi                    = (species[0].polar() == species[1].polar())?1L:this->composed_xi(species[0],species[1]);
      _reduced_LJ_diameter   = 0.5L * (species[0].LJ_diameter() + species[1].LJ_diameter()) * Units<CoeffType>("ang").get_SI_factor() *_xi * _xi;
      _reduced_LJ_depth      = ant_sqrt(species[0].LJ_depth() * species[1].LJ_depth()) * ant_pow(_xi,-1.L/6.L);
+     _reduced_dipole_moment = (species[0].dipole_moment() * species[1].dipole_moment()) / ((CoeffType(2.L) * _reduced_LJ_depth * Constants::Boltzmann_constant<CoeffType>() * ant_pow(_reduced_LJ_diameter,3)));
   }
 
   template <typename CoeffType, typename Interpolator>
