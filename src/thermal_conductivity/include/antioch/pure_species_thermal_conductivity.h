@@ -65,7 +65,7 @@ namespace Antioch{
         template <typename StateType>
         ANTIOCH_AUTO(StateType)
         vib( const unsigned int s, const StateType& mu, const StateType T, const StateType & rho, const StateType & Dss) const
-        ANTIOCH_AUTOFUNC(StateType, rho * Dss * _thermo.cv_vib(s))
+        ANTIOCH_AUTOFUNC(StateType, rho * Dss * _thermo.cv_vib(s,T))
 
       private:
 
