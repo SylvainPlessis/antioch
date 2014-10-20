@@ -175,13 +175,19 @@ namespace Antioch
 
     _mixture.D_and_k(mu, T, rho , mass_fractions, k, ds );
 
+    StateType k1 = zero_clone(T);
+    StateType k2 = zero_clone(T);
+
     for( unsigned int s = 0; s < _mixture.transport_mixture().n_species(); s++ )
       {
         StateType phi_s = this->compute_phi( mu, chi, s );
 
         mu_mix += mu[s]*chi[s]/phi_s;
-        k_mix += k[s]*chi[s]/phi_s;
+        //k_mix += k[s]*chi[s]/phi_s;
+        k1 +=  k[s] * chi[s];
+        k2 +=  chi[s] / k[s];
       }
+     k_mix = (StateType)0.5L * (k1 + StateType(1.L)/k2);
 
     return;
   }
@@ -204,15 +210,19 @@ namespace Antioch
                                                 VectorStateType& mu,
                                                 VectorStateType& chi ) const
   {
-    const StateType M = _mixture.transport_mixture().chemical_mixture().M(mass_fractions);
+//    const StateType M = _mixture.transport_mixture().chemical_mixture().M(mass_fractions);
 
     // Precompute needed quantities
     // chi_s = w_s*M/M_s
-    for( unsigned int s = 0; s < _mixture.transport_mixture().n_species(); s++ )
+/*    for( unsigned int s = 0; s < _mixture.transport_mixture().n_species(); s++ )
       {
         mu[s] = _mixture.mu(s,T);
         chi[s] = mass_fractions[s]*M/_mixture.transport_mixture().chemical_mixture().M(s);
       }
+*/
+  
+      _mixture.mu(T,mu);  
+      _mixture.transport_mixture().chemical_mixture().X(_mixture.transport_mixture().chemical_mixture().M(mass_fractions),mass_fractions,chi);
 
     return;
   }
