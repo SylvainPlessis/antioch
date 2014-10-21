@@ -47,7 +47,7 @@ namespace Antioch
         template <typename StateType>
         ANTIOCH_AUTO(StateType)
           operator()(const StateType & T) const
-        ANTIOCH_AUTOFUNC(StateType, _z_298 * this->F(_eps_kb/CoeffType(298.L)) / this->F(StateType(_eps_kb/T)))
+        ANTIOCH_AUTOFUNC(StateType, _z_298 * _F_298 / this->F(StateType(_eps_kb/T)))
 
       private:
 
@@ -64,6 +64,7 @@ namespace Antioch
         const CoeffType _pi32_2;
         const CoeffType _pi2_4_plus_2;
         const CoeffType _pi32;
+        CoeffType       _F_298;
   };
 
   template <typename CoeffType>
@@ -73,7 +74,8 @@ namespace Antioch
                 _one((CoeffType)1.L),
                 _pi32_2(ant_pow(Constants::pi<CoeffType>(),1.5) / 2.L),
                 _pi2_4_plus_2(Constants::pi<CoeffType>() * Constants::pi<CoeffType>() / 4.L + 2.L),
-                _pi32(ant_pow(Constants::pi<CoeffType>(),1.5))
+                _pi32(ant_pow(Constants::pi<CoeffType>(),1.5)),
+                _F_298(this->F(_eps_kb/(CoeffType)298.L))
   {
      return;
   }
