@@ -178,16 +178,20 @@ namespace Antioch
        VectorStateType molar_fractions = zero_clone(mass_fractions);
        mixture.X(mixture.M(mass_fractions),mass_fractions,molar_fractions);
 
+       typename value_type<VectorStateType>::type epsilon  = constant_clone(molar_fractions[0],1e-12);
+
        for(unsigned int s = 0; s < ds.size(); s++)
        {
-          ds[s] = constant_clone(mass_fractions[s],1) - mass_fractions[s];
+          ds[s] = constant_clone(mass_fractions[s],0);
           typename value_type<VectorStateType>::type denom = zero_clone(mass_fractions[0]);
+          typename value_type<VectorStateType>::type nom   = zero_clone(mass_fractions[0]);
           for(unsigned int j = 0; j < ds.size(); j++)
           {
              if(j == s)continue;
-             denom += molar_fractions[j] / Ds[s][j];
+             nom += (molar_fractions[j] + epsilon)* mixture.M(s);
+             denom += (molar_fractions[j] + epsilon) / Ds[s][j];
           }
-          ds[s] /= denom;
+          ds[s] = nom / (denom * mixture.M(mass_fractions));
        }
    }
 

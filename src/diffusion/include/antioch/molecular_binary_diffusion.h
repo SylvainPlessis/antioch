@@ -180,8 +180,14 @@ namespace Antioch{
   template <typename CoeffType, typename Interpolator>
   inline
   MolecularBinaryDiffusion<CoeffType,Interpolator>::MolecularBinaryDiffusion(const std::vector<TransportSpecies<CoeffType> >& species):
-      _coefficient(CoeffType(3.L/16.L) * ant_sqrt(CoeffType(2.L) * Constants::Boltzmann_constant<CoeffType>() /
-                                                            (Constants::Avogadro<CoeffType>() * Constants::pi<CoeffType>())
+/*  = ~ 7.16 10^-25, 
+        float can't take it, 
+        we cheat on the kb / nAvo division that makes float cry
+
+        3/16 * sqrt ( 2 * kb / (Navo * pi) )
+*/
+      _coefficient(CoeffType(0.1875e-25L) * ant_sqrt(CoeffType(2.L) * Constants::Boltzmann_constant<CoeffType>() * (CoeffType)1e25  /
+                                                            (Constants::Avogadro<CoeffType>() * (CoeffType)1e-25 * Constants::pi<CoeffType>())
                                                           )
                   ), 
 #ifndef NDEBUG
@@ -199,7 +205,8 @@ namespace Antioch{
      _xi((species[0].polar() == species[1].polar())?1L:this->composed_xi(species[0],species[1])),
      _reduced_LJ_diameter(0.5L * (species[0].LJ_diameter() + species[1].LJ_diameter()) * Units<CoeffType>("ang").get_SI_factor() *_xi * _xi), // 1/2 * (sigma_1 + sigma_2) * xi^2
      _reduced_LJ_depth(ant_sqrt(species[0].LJ_depth() * species[1].LJ_depth()) * ant_pow(_xi,-1.L/6.L)), // sqrt(eps_1 * eps_2) * xi^(-1/6)
-     _reduced_dipole_moment((species[0].dipole_moment() * species[1].dipole_moment())/ ((CoeffType(2.L)*_reduced_LJ_depth * Constants::Boltzmann_constant<CoeffType>() * ant_pow(_reduced_LJ_diameter,3))))
+     _reduced_dipole_moment((species[0].dipole_moment() * species[1].dipole_moment() * ant_pow(Units<CoeffType>("D").get_SI_factor(),2) / 
+                                ((CoeffType(2.L)*_reduced_LJ_depth * Constants::Boltzmann_constant<CoeffType>() * ant_pow(_reduced_LJ_diameter,3))))
 #endif
   {
 #ifndef NDEBUG
@@ -256,8 +263,8 @@ namespace Antioch{
 
         CoeffType pol    =  n.polarizability() / ant_pow(n.LJ_diameter(),3); //ang^3 / ang^3 -> cancel out
         CoeffType dipole = p.dipole_moment() * Units<CoeffType>("D").get_SI_factor() 
-                           / ant_sqrt((CoeffType)4.L * Constants::pi<CoeffType>() * Constants::vacuum_permittivity<CoeffType>()
-                                        *  p.LJ_depth() * ant_pow(p.LJ_diameter(),3) );
+                           / ant_sqrt(//(CoeffType)4.L * Constants::pi<CoeffType>() * Constants::vacuum_permittivity<CoeffType>() *
+                                         p.LJ_depth() * ant_pow(p.LJ_diameter(),3) );
 
         return (CoeffType)(1.L) + (CoeffType)(0.25L) * pol * dipole * ant_sqrt(p.LJ_depth()/n.LJ_depth());
   }
