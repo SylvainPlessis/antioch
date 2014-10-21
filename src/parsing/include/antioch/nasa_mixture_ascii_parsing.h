@@ -115,11 +115,18 @@ namespace Antioch
             >> temps[0]
             >> temps[2]
             >> temps[1];
+                // they give it in descending order
         for(unsigned int i = 0; i < 14; i++)
         {
            NumericType a;
            tmp >> a;
            coeffs.push_back(a);
+        }
+        for(unsigned int i = 0; i < 7; i++)
+        {
+            NumericType tmp = coeffs[i];
+            coeffs[i] = coeffs[i+7];
+            coeffs[i+7] = tmp;
         }
 
 	// If we are still good, we have a valid set of thermodynamic

@@ -82,7 +82,7 @@ namespace Antioch
     cv_vib( unsigned int species, const StateType &T ) const
     ANTIOCH_AUTOFUNC(StateType,
 		     this->cp<StateType>(TempCache<StateType>(T),species) -
-		     this->chem_mixture().R(species) * (CoeffType)3.5L)
+		     this->chem_mixture().R(species) * (this->chem_mixture().chemical_species()[species])->n_tr_dofs() )
     CoeffType
     cv_trans( unsigned int species ) const
     ANTIOCH_AUTOFUNC(StateType,
@@ -91,7 +91,7 @@ namespace Antioch
     CoeffType
     cv_rot( unsigned int species ) const
     ANTIOCH_AUTOFUNC(StateType,
-		     this->chem_mixture().R(species))
+		     this->chem_mixture().R(species)*((this->chem_mixture().chemical_species()[species])->n_tr_dofs() - (CoeffType)1.5L))
 
     template<typename StateType>
     ANTIOCH_AUTO(StateType)
