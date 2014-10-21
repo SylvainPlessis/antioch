@@ -188,7 +188,7 @@ namespace Antioch
           for(unsigned int j = 0; j < ds.size(); j++)
           {
              if(j == s)continue;
-             nom += (molar_fractions[j] + epsilon)* mixture.M(s);
+             nom += (molar_fractions[j] + epsilon)* mixture.M(j);
              denom += (molar_fractions[j] + epsilon) / Ds[s][j];
           }
           ds[s] = nom / (denom * mixture.M(mass_fractions));
