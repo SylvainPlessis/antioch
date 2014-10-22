@@ -128,8 +128,6 @@ namespace Antioch{
 
           void build_interpolation();
 
-          CoeffType _coefficient;
-
           Interpolator _interp;
 
 // parameter for the couple
@@ -139,6 +137,8 @@ namespace Antioch{
           CoeffType _reduced_LJ_diameter;
           CoeffType _reduced_LJ_depth;
           CoeffType _reduced_dipole_moment;
+// compute once everything constant, then it's but D(T, cTot)
+          CoeffType _coefficient;
 
 
   };
@@ -153,16 +153,6 @@ namespace Antioch{
   template <typename CoeffType, typename Interpolator>
   inline
   MolecularBinaryDiffusion<CoeffType,Interpolator>::MolecularBinaryDiffusion(const TransportSpecies<CoeffType> & si, const TransportSpecies<CoeffType> & sj):
-/*  = ~ 7.16 10^-25, 
-        float can't take it, 
-        we cheat on the kb / nAvo division that makes float cry
-
-        3/16 * sqrt ( 2 * kb / (Navo * pi) )
-*/
-      _coefficient(CoeffType(0.1875e-25L) * ant_sqrt(CoeffType(2.L) * Constants::Boltzmann_constant<CoeffType>() * (CoeffType)1e25  /
-                                                            (Constants::Avogadro<CoeffType>() * (CoeffType)1e-25 * Constants::pi<CoeffType>())
-                                                          )
-                  ), 
      _i(si.species()),
      _j(sj.species()),
      _reduced_mass((si.species() == sj.species())?si.M():(si.M() * sj.M()) / (si.M() + sj.M())), // kg/mol
@@ -170,9 +160,19 @@ namespace Antioch{
      _reduced_LJ_diameter(0.5L * (si.LJ_diameter() + sj.LJ_diameter()) * Units<CoeffType>("ang").get_SI_factor() *_xi * _xi), // 1/2 * (sigma_1 + sigma_2) * xi^2
      _reduced_LJ_depth(ant_sqrt(si.LJ_depth() * sj.LJ_depth()) * ant_pow(_xi,-1.L/6.L)), // sqrt(eps_1 * eps_2) * xi^(-1/6)
      _reduced_dipole_moment((si.dipole_moment() * sj.dipole_moment() * ant_pow(Units<CoeffType>("D").get_SI_factor(),2 )) / 
-                            ((CoeffType(2.L) * _reduced_LJ_depth * Constants::Boltzmann_constant<CoeffType>() * ant_pow(_reduced_LJ_diameter,3) ))) // mu^2 / (2*eps*sigma^3)
+                            ((CoeffType(2.L) * _reduced_LJ_depth * Constants::Boltzmann_constant<CoeffType>() * ant_pow(_reduced_LJ_diameter,3) ))), // mu^2 / (2*eps*sigma^3)
+/*  = ~ 7.16 10^-25, 
+        float can't take it, 
+        we cheat on the kb / nAvo division that makes float cry
+
+        3/16 * sqrt ( 2 * kb / (Navo * pi) )
+*/
+     _coefficient(CoeffType(0.1875e-25L) * ant_sqrt(CoeffType(2.L) * Constants::Boltzmann_constant<CoeffType>() * (CoeffType)1e25  /
+                                                            (Constants::Avogadro<CoeffType>() * (CoeffType)1e-25 * Constants::pi<CoeffType>())
+                                                    )
+                                         / sqrt(_reduced_mass) / (_reduced_LJ_diameter * _reduced_LJ_diameter)
+                 ) 
   {
-     _coefficient /= sqrt(_reduced_mass) * (_reduced_LJ_diameter * _reduced_LJ_diameter);
      this->build_interpolation();
 
      return;
@@ -181,16 +181,6 @@ namespace Antioch{
   template <typename CoeffType, typename Interpolator>
   inline
   MolecularBinaryDiffusion<CoeffType,Interpolator>::MolecularBinaryDiffusion(const std::vector<TransportSpecies<CoeffType> >& species):
-/*  = ~ 7.16 10^-25, 
-        float can't take it, 
-        we cheat on the kb / nAvo division that makes float cry
-
-        3/16 * sqrt ( 2 * kb / (Navo * pi) )
-*/
-      _coefficient(CoeffType(0.1875e-25L) * ant_sqrt(CoeffType(2.L) * Constants::Boltzmann_constant<CoeffType>() * (CoeffType)1e25  /
-                                                            (Constants::Avogadro<CoeffType>() * (CoeffType)1e-25 * Constants::pi<CoeffType>())
-                                                          )
-                  ), 
 #ifndef NDEBUG
      _i(0),
      _j(0),
@@ -198,7 +188,7 @@ namespace Antioch{
      _xi(-1),
      _reduced_LJ_diameter(-1),
      _reduced_LJ_depth(-1),
-     _reduced_dipole_moment(-1)
+     _reduced_dipole_moment(-1),
 #else
      _i(species[0].species()),
      _j(species[1].species()),
@@ -207,16 +197,15 @@ namespace Antioch{
      _reduced_LJ_diameter(0.5L * (species[0].LJ_diameter() + species[1].LJ_diameter()) * Units<CoeffType>("ang").get_SI_factor() *_xi * _xi), // 1/2 * (sigma_1 + sigma_2) * xi^2
      _reduced_LJ_depth(ant_sqrt(species[0].LJ_depth() * species[1].LJ_depth()) * ant_pow(_xi,-1.L/6.L)), // sqrt(eps_1 * eps_2) * xi^(-1/6)
      _reduced_dipole_moment((species[0].dipole_moment() * species[1].dipole_moment() * ant_pow(Units<CoeffType>("D").get_SI_factor(),2) / 
-                                ((CoeffType(2.L)*_reduced_LJ_depth * Constants::Boltzmann_constant<CoeffType>() * ant_pow(_reduced_LJ_diameter,3))))
+                                ((CoeffType(2.L)*_reduced_LJ_depth * Constants::Boltzmann_constant<CoeffType>() * ant_pow(_reduced_LJ_diameter,3)))),
 #endif
+      _coefficient(0.) // defined in set_coeffs
   {
 #ifndef NDEBUG
      antioch_assert_equal_to(species.size(),2);
 
      this->set_coeffs(species);
 #endif
-
-     _coefficient /= sqrt(_reduced_mass) * (_reduced_LJ_diameter * _reduced_LJ_diameter);
      this->build_interpolation();
   }
 
@@ -239,23 +228,26 @@ namespace Antioch{
      _xi                    = (si.polar() == sj.polar())?1L:this->composed_xi(si,sj);
      _reduced_LJ_diameter   = 0.5L * (si.LJ_diameter() + sj.LJ_diameter()) * Units<CoeffType>("ang").get_SI_factor() *_xi * _xi;
      _reduced_LJ_depth      = ant_sqrt(si.LJ_depth() * sj.LJ_depth()) * ant_pow(_xi,-1.L/6.L);
-     _reduced_dipole_moment = (si.dipole_moment() * sj.dipole_moment()) / ((CoeffType(2.L)*_reduced_LJ_depth * Constants::Boltzmann_constant<CoeffType>() * ant_pow(_reduced_LJ_diameter,3)));
-      _coefficient          = CoeffType(0.1875e-25L) * ant_sqrt(CoeffType(2.L) * Constants::Boltzmann_constant<CoeffType>() * (CoeffType)1e25  /
-                                                            (Constants::Avogadro<CoeffType>() * (CoeffType)1e-25 * Constants::pi<CoeffType>())
-                                                          ) / (sqrt(_reduced_mass) * (_reduced_LJ_diameter * _reduced_LJ_diameter));
+     _reduced_dipole_moment = (si.dipole_moment() * sj.dipole_moment()) * ant_pow(Units<CoeffType>("D").get_SI_factor(),2)
+                                / ((CoeffType(2.L)*_reduced_LJ_depth * Constants::Boltzmann_constant<CoeffType>() * ant_pow(_reduced_LJ_diameter,3)));
+/*  = ~ 7.16 10^-25, 
+        float can't take it, 
+        we cheat on the kb / nAvo division that makes float cry
+
+        3/16 * sqrt ( 2 * kb / (Navo * pi) ) / sqrt(mass) / sigma^2
+*/
+     _coefficient           = CoeffType(0.1875e-25L) * ant_sqrt(CoeffType(2.L) * Constants::Boltzmann_constant<CoeffType>() * (CoeffType)1e25  /
+                                                                  (Constants::Avogadro<CoeffType>() * (CoeffType)1e-25 * Constants::pi<CoeffType>())
+                                                                ) 
+                                                     / (sqrt(_reduced_mass) / (_reduced_LJ_diameter * _reduced_LJ_diameter));
   }
 
   template <typename CoeffType, typename Interpolator>
   inline
   void MolecularBinaryDiffusion<CoeffType,Interpolator>::set_coeffs(const std::vector<TransportSpecies<CoeffType> >& species)
   {
-     _i                     = species[0].species();
-     _j                     = species[1].species();
-     _reduced_mass          = (species[0].species() == species[1].species())?species[0].M():(species[0].M() * species[1].M()) / (species[0].M() + species[1].M());
-     _xi                    = (species[0].polar() == species[1].polar())?1L:this->composed_xi(species[0],species[1]);
-     _reduced_LJ_diameter   = 0.5L * (species[0].LJ_diameter() + species[1].LJ_diameter()) * Units<CoeffType>("ang").get_SI_factor() *_xi * _xi;
-     _reduced_LJ_depth      = ant_sqrt(species[0].LJ_depth() * species[1].LJ_depth()) * ant_pow(_xi,-1.L/6.L);
-     _reduced_dipole_moment = (species[0].dipole_moment() * species[1].dipole_moment()) / ((CoeffType(2.L) * _reduced_LJ_depth * Constants::Boltzmann_constant<CoeffType>() * ant_pow(_reduced_LJ_diameter,3)));
+     antioch_assert_equal_to(species.size(),2);
+     this->reset_coeffs(species[0],species[1]);
   }
 
   template <typename CoeffType, typename Interpolator>

@@ -143,14 +143,21 @@ namespace Antioch
 
     this->compute_mu_chi( T, mass_fractions, mu, chi );
 
+    StateType k1 = zero_clone(T);
+    StateType k2 = zero_clone(T);
+
     for( unsigned int s = 0; s < _mixture.transport_mixture().n_species(); s++ )
       {
-        StateType phi_s = this->compute_phi( mu, chi, s );
+  //      StateType phi_s = this->compute_phi( mu, chi, s );
         
         StateType k_s = _mixture.k( s, mu[s], T, mass_fractions, rho );
 
-        k_mix += k_s*chi[s]/phi_s;
+     //   k_mix += k_s*chi[s]/phi_s;
+        k1 +=  k_s * chi[s];
+        k2 +=  chi[s] / k_s;
       }
+
+     k_mix = (StateType)0.5L * (k1 + StateType(1.L)/k2);
 
     return k_mix;
   }
