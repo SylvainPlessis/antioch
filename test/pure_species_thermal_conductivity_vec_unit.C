@@ -70,7 +70,7 @@ GRVY::GRVY_Timer_Class gt;
 #include <limits>
 
 template <typename Scalar, typename Element>
-int test_k( const Element & k, const Scalar & k_exact, const Scalar & tol )
+int test_k( const Element & k, const Element & k_exact, const Scalar & tol, const std::string & words )
 {
   using std::abs;
 
@@ -81,7 +81,7 @@ int test_k( const Element & k, const Scalar & k_exact, const Scalar & tol )
   if( rel_error  > tol )
     {
       std::cerr << std::setprecision(20) << std::scientific
-                << "Error: Mismatch in thermal conductivity" << std::endl
+                << "Error: Mismatch in thermal conductivity " << words << std::endl
 		<< "k       = " << k << std::endl
 		<< "k_exact = " << k_exact << std::endl
 		<< "rel_error = " << rel_error << std::endl
@@ -101,12 +101,27 @@ int vectester(const PairScalars& example, const std::string& testname)
   std::vector<std::string> species_str_list;
   const unsigned int n_species = 1;
   species_str_list.reserve(n_species);
+//linear
   species_str_list.push_back( "N2" );
+//atom
+  species_str_list.push_back( "H" );
+//other
+  species_str_list.push_back( "H2O" );
 
-  const Scalar LJ_depth_N2 = 97.53L;
-  const Scalar Z_298 = 4.0L;
+  const Scalar LJ_depth_N2 = 97.53L; // in K
+  const Scalar Z_298_N2 = 4.0L;         // dimensionless
   std::vector<Scalar> coeffs_N2(14,0.);
   std::vector<Scalar> temps_N2(3,0.);
+
+  const Scalar LJ_depth_H = 145.0L;
+  const Scalar Z_298_H = 0.0L;
+  std::vector<Scalar> coeffs_H(14,0.);
+  std::vector<Scalar> temps_H(3,0.);
+
+  const Scalar LJ_depth_H2O = 572.400L;
+  const Scalar Z_298_H2O = 4.0L;
+  std::vector<Scalar> coeffs_H2O(14,0.);
+  std::vector<Scalar> temps_H2O(3,0.);
 
   coeffs_N2[0]  = 0.03298677E+02;
   coeffs_N2[1]  = 0.14082404E-02;;
@@ -127,34 +142,84 @@ int vectester(const PairScalars& example, const std::string& testname)
   temps_N2[1] = 1000.L;
   temps_N2[2] = 5000.L;
 
+  coeffs_H[0]  =  2.50000000E+00;
+  coeffs_H[1]  =  7.05332819E-13;
+  coeffs_H[2]  = -1.99591964E-15;
+  coeffs_H[3]  =  2.30081632E-18;
+  coeffs_H[4]  = -9.27732332E-22;
+  coeffs_H[5]  =  2.54736599E+04;
+  coeffs_H[6]  = -4.46682853E-01;
+  coeffs_H[7]  =  2.50000001E+00;
+  coeffs_H[8]  = -2.30842973E-11;
+  coeffs_H[9]  =  1.61561948E-14;
+  coeffs_H[10] = -4.73515235E-18;
+  coeffs_H[11] =  4.98197357E-22;
+  coeffs_H[12] =  2.54736599E+04;
+  coeffs_H[13] = -4.46682914E-01;
+
+  temps_H[0] = 200.L;
+  temps_H[1] = 1000.L;
+  temps_H[2] = 3500.L;
+
+  coeffs_H2O[0]  =  4.19864056E+00;
+  coeffs_H2O[1]  = -2.03643410E-03;
+  coeffs_H2O[2]  =  6.52040211E-06;
+  coeffs_H2O[3]  = -5.48797062E-09;
+  coeffs_H2O[4]  =  1.77197817E-12;
+  coeffs_H2O[5]  = -3.02937267E+04;
+  coeffs_H2O[6]  = -8.49032208E-01;
+  coeffs_H2O[7]  =  3.03399249E+00;
+  coeffs_H2O[8]  =  2.17691804E-03;
+  coeffs_H2O[9]  = -1.64072518E-07;
+  coeffs_H2O[10] = -9.70419870E-11;
+  coeffs_H2O[11] =  1.68200992E-14;
+  coeffs_H2O[12] = -3.00042971E+04;
+  coeffs_H2O[13] =  4.96677010E+00;
+
+  temps_H2O[0] = 200.L;
+  temps_H2O[1] = 1000.L;
+  temps_H2O[2] = 3500.L;
+
   Antioch::ChemicalMixture<Scalar> chem_mixture( species_str_list );
 
  // Antioch::StatMechThermodynamics<Scalar> thermo( chem_mixture );
   Antioch::NASAThermoMixture<Scalar, Antioch::NASACurveFit<Scalar> > thermo_mix( chem_mixture );
-  thermo_mix.add_curve_fit("N2",coeffs_N2,temps_N2);
+  thermo_mix.add_curve_fit("N2", coeffs_N2, temps_N2);
+  thermo_mix.add_curve_fit("H",  coeffs_H,  temps_H);
+  thermo_mix.add_curve_fit("H2O",coeffs_H2O,temps_H2O);
   Antioch::NASAEvaluator<Scalar, Antioch::NASACurveFit<Scalar> > thermo( thermo_mix );
 
-  Antioch::PureSpeciesThermalConductivity<Antioch::NASAEvaluator<Scalar, Antioch::NASACurveFit<Scalar> >, Scalar > k( thermo, Z_298, LJ_depth_N2);
+  Antioch::PureSpeciesThermalConductivity<Antioch::NASAEvaluator<Scalar,Antioch::NASACurveFit<Scalar> >, Scalar > k_N2( thermo, Z_298_N2, LJ_depth_N2);
+  Antioch::PureSpeciesThermalConductivity<Antioch::NASAEvaluator<Scalar,Antioch::NASACurveFit<Scalar> >, Scalar > k_H( thermo, Z_298_H, LJ_depth_H);
+  Antioch::PureSpeciesThermalConductivity<Antioch::NASAEvaluator<Scalar,Antioch::NASACurveFit<Scalar> >, Scalar > k_H2O( thermo, Z_298_H2O, LJ_depth_H2O);
 
   // Construct from example to avoid resizing issues
   PairScalars mu  = example;
   PairScalars dss = example;
   PairScalars rho = example;
   PairScalars T = example;
+  PairScalars k_exact_N2 = example;
+  PairScalars k_exact_H = example;
+  PairScalars k_exact_H2O = example;
   for (unsigned int tuple=0; tuple != ANTIOCH_N_TUPLES; ++tuple)
     {
-      T[2*tuple]     = 1500.1;
-      T[2*tuple+1]   = 1600.1;
-      mu[2*tuple]    = 3.14e-3;
-      mu[2*tuple+1]  = 3.14e-3;
-      dss[2*tuple]   = 5.23e-5;
-      dss[2*tuple+1] = 5.23e-5;
-      rho[2*tuple]   = 1.4;
-      rho[2*tuple+1] = 1.4;
+      T[2*tuple]     = 800.1L;
+      T[2*tuple+1]   = 1500.1L;
+      for(unsigned int i=0; i < 2; i++)
+      {
+        mu[2*tuple+i]    = 3.14e-3L;
+        dss[2*tuple+i]   = 5.23e-5L;
+        rho[2*tuple+i]   = 1.4L;
+      }
+
+      k_exact_N2[2*tuple]    = 3.093167156837462471870738790881329983241829808672669033364;
+      k_exact_H[2*tuple]     = 97.12578494791666666666666666666666666666666666666666666666;
+      k_exact_H2O[2*tuple]   = 4.854337293026230683188193320063326358735232984125875255551;
+      k_exact_N2[2*tuple+1]  = 3.194831520584533016571929766390779999673621653723027368129;
+      k_exact_H[2*tuple+1]   = 97.12578494791666666666666666666666666666666666666666666666;
+      k_exact_H2O[2*tuple+1] = 5.143662825303267444216513226471740441147579013327958436906;
     }
   
-  const Scalar k_exact0 = 123.296800605309501138839307257794302255577891781560672779553;
-  const Scalar k_exact1 = 123.335459776209344597337725820704523045620225410498050659927;
 
   int return_flag = 0;
 
@@ -162,21 +227,29 @@ int vectester(const PairScalars& example, const std::string& testname)
   gt.BeginTimer(testname);
 #endif
 
-  const PairScalars k_ps = k(0,mu,T,rho,dss);
+  const PairScalars k_ps_N2 = k_N2(0,mu,T,rho,dss);
+  const PairScalars k_ps_H = k_H(1,mu,T,rho,dss);
+  const PairScalars k_ps_H2O = k_H2O(2,mu,T,rho,dss);
 
 #ifdef ANTIOCH_HAVE_GRVY
   gt.EndTimer(testname);
 #endif
 
-  const Scalar tol = (std::numeric_limits<Scalar>::epsilon()*10 < 5e-17)?
-                        5e-17:
+  const Scalar tol = (std::numeric_limits<Scalar>::epsilon()*10 < 7e-17)?
+                        7e-17:
                         std::numeric_limits<Scalar>::epsilon()*10;
+  Scalar tolH = tol*50000.;
+  if(tolH < 2e-11)tolH = 2e-11;
 
   for (unsigned int tuple=0; tuple != ANTIOCH_N_TUPLES; ++tuple)
     {
 
-      return_flag = test_k( k_ps[2*tuple], k_exact0, tol ) || return_flag;
-      return_flag = test_k( k_ps[2*tuple+1], k_exact1, tol ) || return_flag;
+      return_flag = test_k( k_ps_N2[2*tuple],    k_exact_N2[2*tuple],    tol,  "N2 low" )   || return_flag;
+      return_flag = test_k( k_ps_H[2*tuple],     k_exact_H[2*tuple],     tolH, "H low" )    || return_flag;
+      return_flag = test_k( k_ps_H2O[2*tuple],   k_exact_H2O[2*tuple],   tol,  "H2O low" )  || return_flag;
+      return_flag = test_k( k_ps_N2[2*tuple+1],  k_exact_N2[2*tuple+1],  tol,  "N2 high" )  || return_flag;
+      return_flag = test_k( k_ps_H[2*tuple+1],   k_exact_H[2*tuple+1],   tolH, "H high" )   || return_flag;
+      return_flag = test_k( k_ps_H2O[2*tuple+1], k_exact_H2O[2*tuple+1], tol,  "H2O high" ) || return_flag;
     }
 
   return return_flag;

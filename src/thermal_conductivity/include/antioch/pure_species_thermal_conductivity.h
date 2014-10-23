@@ -50,7 +50,7 @@ namespace Antioch{
 
         template <typename StateType>
         const ANTIOCH_AUTO(StateType) 
-                operator()(unsigned int s, const StateType& mu, const StateType T, const StateType & rho, const StateType & Dss) const;
+                operator()(unsigned int s, const StateType& mu, const StateType & T, const StateType & rho, const StateType & Dss) const;
 
         template <typename StateType>
         ANTIOCH_AUTO(StateType)
@@ -67,7 +67,6 @@ namespace Antioch{
         vib( const unsigned int s, const StateType& mu, const StateType T, const StateType & rho, const StateType & Dss) const
         ANTIOCH_AUTOFUNC(StateType, rho * Dss * _thermo.cv_vib(s,T))
 
-      private:
 
         template <typename StateType>
         const
@@ -81,6 +80,7 @@ namespace Antioch{
          B(unsigned int s, const StateType & T, const StateType & rho_times_self_diff_over_mu) const  
         ANTIOCH_AUTOFUNC(StateType,_rot(T) + two_over_pi * (five_over_three * _thermo.cv_rot_over_R(s) + rho_times_self_diff_over_mu ) )
 
+      private:
 
         /*! never ever use it*/
         PureSpeciesThermalConductivity();
@@ -131,12 +131,12 @@ namespace Antioch{
   template <typename StateType>
   inline
   const ANTIOCH_AUTO(StateType) 
-        PureSpeciesThermalConductivity<ThermoEvaluator,CoeffType>::operator()(const unsigned int s, const StateType& mu, const StateType T, const StateType & rho, const StateType & Dss) const
+        PureSpeciesThermalConductivity<ThermoEvaluator,CoeffType>::operator()(const unsigned int s, const StateType& mu, const StateType & T, const StateType & rho, const StateType & Dss) const
   {
       StateType rho_d_m = rho * Dss / mu; // only once instead of twice
       StateType A_B = two_over_pi * this->A(rho_d_m) / this->B(s, T, rho_d_m);
 
-      return ( mu  * _thermo.cv_trans(s) * five_over_two * (one - _thermo.cv_rot_over_R(s) / _thermo.cv_trans_over_R(s) * A_B) +
+      return ( mu * _thermo.cv_trans(s) * five_over_two * (one - _thermo.cv_rot_over_R(s) / _thermo.cv_trans_over_R(s) * A_B) +
                rho * Dss  * ( _thermo.cv_rot(s) * (one + A_B) +
                               _thermo.cv_vib(s,T) ) ) ;
   }
