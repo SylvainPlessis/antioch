@@ -79,8 +79,7 @@ namespace Antioch{
         const
         ANTIOCH_AUTO(StateType)
          B(unsigned int s, const StateType & T, const StateType & rho_times_self_diff_over_mu) const  
-        ANTIOCH_AUTOFUNC(StateType,_rot(T) + two_over_pi * (five_over_three * _thermo.cv_rot(s) / Constants::R_universal<CoeffType>() +
-                                                    rho_times_self_diff_over_mu ) )
+        ANTIOCH_AUTOFUNC(StateType,_rot(T) + two_over_pi * (five_over_three * _thermo.cv_rot_over_R(s) + rho_times_self_diff_over_mu ) )
 
 
         /*! never ever use it*/
@@ -137,7 +136,7 @@ namespace Antioch{
       StateType rho_d_m = rho * Dss / mu; // only once instead of twice
       StateType A_B = two_over_pi * this->A(rho_d_m) / this->B(s, T, rho_d_m);
 
-      return ( mu  * _thermo.cv_trans(s) * five_over_two * (one - _thermo.cv_rot(s) / _thermo.cv_trans(s) * A_B) +
+      return ( mu  * _thermo.cv_trans(s) * five_over_two * (one - _thermo.cv_rot_over_R(s) / _thermo.cv_trans_over_R(s) * A_B) +
                rho * Dss  * ( _thermo.cv_rot(s) * (one + A_B) +
                               _thermo.cv_vib(s,T) ) ) ;
   }

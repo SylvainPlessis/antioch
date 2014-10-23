@@ -67,8 +67,8 @@ namespace Antioch
     ANTIOCH_AUTO(StateType)
     cv( const TempCache<StateType>& cache, unsigned int species ) const
     ANTIOCH_AUTOFUNC(StateType,
-		     this->cp(cache,species) -
-		     this->chem_mixture().R(species))
+                     this->cp(cache,species) -
+                     this->chem_mixture().R(species))
 
     template<typename StateType, typename VectorStateType>
     typename enable_if_c<
@@ -76,31 +76,49 @@ namespace Antioch
       >::type 
     cv( const TempCache<StateType>& cache, const VectorStateType& mass_fractions ) const;
 
+
         // quick hack for now
     template<typename StateType>
     ANTIOCH_AUTO(StateType)
     cv_vib( unsigned int species, const StateType &T ) const
     ANTIOCH_AUTOFUNC(StateType,
-                     (ant_abs((this->chem_mixture().chemical_species()[species])->n_tr_dofs() - 1.5) < 0.1)?0:
-		     this->cp<StateType>(TempCache<StateType>(T),species) -
-		     this->chem_mixture().R(species) * (this->chem_mixture().chemical_species()[species])->n_tr_dofs() )
+                     this->chem_mixture().R(species) * (
+                         this->cp_over_R<StateType>(TempCache<StateType>(T),species) -
+                         (CoeffType)1.L - (this->chem_mixture().chemical_species()[species])->n_tr_dofs()
+                                                        )
+                     )
+
     CoeffType
     cv_trans( unsigned int species ) const
-    ANTIOCH_AUTOFUNC(StateType,
-		     this->chem_mixture().R(species) * (CoeffType)1.5L)
+                {return this->chem_mixture().R(species) * (CoeffType)1.5L;}
 
     CoeffType
     cv_rot( unsigned int species ) const
+               {return  this->chem_mixture().R(species)*((this->chem_mixture().chemical_species()[species])->n_tr_dofs() - (CoeffType)1.5L);}
+
+    template<typename StateType>
+    ANTIOCH_AUTO(StateType)
+    cv_vib_over_R( unsigned int species, const StateType &T ) const
     ANTIOCH_AUTOFUNC(StateType,
-		     //this->chem_mixture().R(species)*((this->chem_mixture().chemical_species()[species])->n_tr_dofs() - (CoeffType)1.5L))
-		     Antioch::Constants::R_universal<CoeffType>()*((this->chem_mixture().chemical_species()[species])->n_tr_dofs() - (CoeffType)1.5L))
+                     this->cp_over_R<StateType>(TempCache<StateType>(T),species) 
+                      * ((CoeffType)1.L + (this->chem_mixture().chemical_species()[species])->n_tr_dofs()) )
+
+    CoeffType
+    cv_trans_over_R( unsigned int species ) const {return 1.5L;}
+
+    CoeffType
+    cv_rot_over_R( unsigned int species ) const
+                     {return ((this->chem_mixture().chemical_species()[species])->n_tr_dofs() - (CoeffType)1.5L);}
+
+
+
 
     template<typename StateType>
     ANTIOCH_AUTO(StateType)
     h( const TempCache<StateType>& cache, unsigned int species ) const
     ANTIOCH_AUTOFUNC(StateType,
-		     this->chem_mixture().R(species) * cache.T *
-		     this->h_over_RT(cache,species))
+                     this->chem_mixture().R(species) * cache.T *
+                     this->h_over_RT(cache,species))
 
     template<typename StateType, typename VectorStateType>
     typename enable_if_c<
@@ -206,10 +224,10 @@ namespace Antioch
       Antioch::if_else
         (cache.T < ScalarType(200.1),
          Antioch::constant_clone
-	   (cache.T,_nasa_mixture.cp_at_200p1(species)),
-	 StateType
-	   (this->chem_mixture().R(species) * 
-	    this->cp_over_R(cache, species)));
+           (cache.T,_nasa_mixture.cp_at_200p1(species)),
+         StateType
+           (this->chem_mixture().R(species) * 
+            this->cp_over_R(cache, species)));
   }
 
   template<typename CoeffType, typename NASAFit>

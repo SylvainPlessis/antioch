@@ -49,6 +49,9 @@
 #include "antioch/vexcl_utils_decl.h"
 
 #include "antioch/stat_mech_thermo.h"
+#include "antioch/nasa_evaluator.h"
+#include "antioch/nasa_mixture.h"
+#include "antioch/nasa_curve_fit.h"
 #include "antioch/chemical_mixture.h"
 #include "antioch/pure_species_thermal_conductivity.h"
 
@@ -100,16 +103,38 @@ int vectester(const PairScalars& example, const std::string& testname)
   species_str_list.reserve(n_species);
   species_str_list.push_back( "N2" );
 
-  const Scalar Mm_N = 14.008e-3L;
-  const Scalar Mm_N2 = 2.L * Mm_N;
   const Scalar LJ_depth_N2 = 97.53L;
   const Scalar Z_298 = 4.0L;
+  std::vector<Scalar> coeffs_N2(14,0.);
+  std::vector<Scalar> temps_N2(3,0.);
+
+  coeffs_N2[0]  = 0.03298677E+02;
+  coeffs_N2[1]  = 0.14082404E-02;;
+  coeffs_N2[2]  = -0.03963222E-04;
+  coeffs_N2[3]  =  0.05641515E-07;
+  coeffs_N2[4]  = -0.02444854E-10;
+  coeffs_N2[5]  = -0.10208999E+04;
+  coeffs_N2[6]  =  0.03950372E+02;
+  coeffs_N2[7]  =  0.02926640E+02;
+  coeffs_N2[8]  =  0.14879768E-02;
+  coeffs_N2[9]  = -0.05684760E-05;
+  coeffs_N2[10] =  0.10097038E-09;
+  coeffs_N2[11] = -0.06753351E-13;
+  coeffs_N2[12] = -0.09227977E+04;
+  coeffs_N2[13] =  0.05980528E+02;
+
+  temps_N2[0] = 300.L;
+  temps_N2[1] = 1000.L;
+  temps_N2[2] = 5000.L;
 
   Antioch::ChemicalMixture<Scalar> chem_mixture( species_str_list );
 
-  Antioch::StatMechThermodynamics<Scalar> thermo( chem_mixture );
+ // Antioch::StatMechThermodynamics<Scalar> thermo( chem_mixture );
+  Antioch::NASAThermoMixture<Scalar, Antioch::NASACurveFit<Scalar> > thermo_mix( chem_mixture );
+  thermo_mix.add_curve_fit("N2",coeffs_N2,temps_N2);
+  Antioch::NASAEvaluator<Scalar, Antioch::NASACurveFit<Scalar> > thermo( thermo_mix );
 
-  Antioch::PureSpeciesThermalConductivity<Antioch::StatMechThermodynamics<Scalar>, Scalar > k( thermo, Z_298, LJ_depth_N2, Mm_N2);
+  Antioch::PureSpeciesThermalConductivity<Antioch::NASAEvaluator<Scalar, Antioch::NASACurveFit<Scalar> >, Scalar > k( thermo, Z_298, LJ_depth_N2);
 
   // Construct from example to avoid resizing issues
   PairScalars mu  = example;

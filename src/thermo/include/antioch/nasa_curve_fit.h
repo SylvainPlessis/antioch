@@ -201,11 +201,16 @@ namespace Antioch
     UIntType interval;
     Antioch::zero_clone(interval, T);
 
+    typedef typename Antioch::value_type<StateType>::type ScalarType;
+
     for(unsigned int i = 1; i < _temp.size(); ++i)
     {
         interval = Antioch::if_else
-                   (T > _temp[i-1] && T < _temp[i],
-                       i - 1,
+                   (T > ScalarType(_temp[i-1]),
+                         UIntType
+                                (Antioch::if_else(T <= ScalarType(_temp[i]),
+                                          Antioch::constant_clone(interval,i - 1),
+                                          interval)),
                        interval); 
     }
     return interval;
