@@ -116,7 +116,7 @@ namespace Antioch
       ANTIOCH_AUTOFUNC(StateType,    _a   // 5 / 16 * sqrt(pi * Boltzmann_constant)
                                         * ant_sqrt(_mass * T )  
                                      / ( Constants::pi<CoeffType>() * _LJ.diameter() * _LJ.diameter() * CoeffType(1e-20L) * // to SI
-                                         _interp.interpolated_value(StateType (T / _LJ.depth()) )   // Omega(2,2), T*
+                                         _interp.interpolated_value(ant_log(T / _LJ.depth()) )   // Omega(2,2), T*
                                         )
                       )
 
@@ -124,7 +124,7 @@ namespace Antioch
       ANTIOCH_AUTO(StateType) 
       derivative(const StateType &T) const
       ANTIOCH_AUTOFUNC(StateType,  this->viscosity(T) * 
-                           (StateType (1.L)/T - _interp.dinterp_dx( StateType(T / _LJ.depth())) / _interp.interpolated_value(StateType (T / _LJ.depth()))     // T*
+                           (StateType (1.L)/T - _interp.dinterp_dx( ant_log(T / _LJ.depth())) / _interp.interpolated_value(ant_log(T / _LJ.depth()))     // T*
                            ))
 
       template <typename StateType>
@@ -133,7 +133,7 @@ namespace Antioch
       template <typename StateType>
       ANTIOCH_AUTO(StateType)
         Stockmayer(const StateType & T) const
-      ANTIOCH_AUTOFUNC(StateType,_interp.interpolated_value( StateType(T / _LJ.depth()) ) )   // Omega(2,2)
+      ANTIOCH_AUTOFUNC(StateType,_interp.interpolated_value( ant_log(T / _LJ.depth()) ) )   // Omega(2,2)
                                           
 
       //! Formatted print, by default to \p std::cout
@@ -141,6 +141,9 @@ namespace Antioch
 
       //!\return the value of the reduced dipole moment
       const CoeffType & delta_star() const;
+
+      //!\return the Lennard-Jones potential object
+      const LennardJonesPotential<CoeffType> & Lennard_Jones() const;
 
       //! Formatted print.
       friend std::ostream& operator<<(std::ostream& os, const PureSpeciesViscosity& mu)
@@ -177,7 +180,8 @@ namespace Antioch
         _LJ(LJ_depth,LJ_diameter),
         _dipole_moment(dipole_moment),
         _mass(mass),
-        _delta_star(ant_pow(_dipole_moment * Units<CoeffType>("D").get_SI_factor(),2) /             
+        _delta_star(CoeffType(1e-7) * ant_pow(Constants::light_celerity<CoeffType>(),2) * // * 1/(4*pi * eps_0) = 10^-7 * c^2
+                    ant_pow(_dipole_moment * Units<CoeffType>("D").get_SI_factor(),2) /             
                      ( _LJ.depth() * Constants::Boltzmann_constant<CoeffType>() * CoeffType(2.L) * ant_pow(_LJ.diameter() * Units<CoeffType>("ang").get_SI_factor(),3) ))
   {
      this->build_interpolation();
@@ -197,7 +201,8 @@ namespace Antioch
         _LJ(coeffs[0],coeffs[1]),
         _dipole_moment(coeffs[2]),
         _mass(coeffs[3]),
-        _delta_star(ant_pow(_dipole_moment * Units<CoeffType>("D").get_SI_factor(),2) /
+        _delta_star(CoeffType(1e-7) * ant_pow(Constants::light_celerity<CoeffType>(),2) * // * 1/(4*pi * eps_0) = 10^-7 * c^2
+                    ant_pow(_dipole_moment * Units<CoeffType>("D").get_SI_factor(),2) /
                      ( _LJ.depth() * Constants::Boltzmann_constant<CoeffType>() * CoeffType(2.L) * ant_pow(_LJ.diameter() * Units<CoeffType>("ang").get_SI_factor(),3) ))
 #endif
   {
@@ -208,7 +213,8 @@ namespace Antioch
         _LJ.set_diameter(coeffs[1]);
         _dipole_moment   = coeffs[2];
         _mass            = coeffs[3];
-        _delta_star      = ant_pow(_dipole_moment * Units<CoeffType>("D").get_SI_factor(),2) /
+        _delta_star      = CoeffType(1e-7) * ant_pow(Constants::light_celerity<CoeffType>(),2) * // * 1/(4*pi * eps_0) = 10^-7 * c^2
+                           ant_pow(_dipole_moment * Units<CoeffType>("D").get_SI_factor(),2) /
                      ( _LJ.depth() * Constants::Boltzmann_constant<CoeffType>() * CoeffType(2.L) * ant_pow(_LJ.diameter() * Units<CoeffType>("ang").get_SI_factor(),3) );
 #endif
      this->build_interpolation();
@@ -233,11 +239,11 @@ namespace Antioch
      std::vector<CoeffType> interp_surf(surface.temperature().size(),0);
      for(unsigned int iT = 0; iT < surface.temperature().size(); iT++)
      {
-        Interpolator spline(surface.delta(),surface.omega_2_2()[iT]);
-        interp_surf[iT] = spline.interpolated_value(_delta_star);
+         Interpolator spline(surface.delta(),surface.omega_2_2()[iT]);
+         interp_surf[iT] = spline.interpolated_value(_delta_star);
      }
 
-     _interp.spline_init(surface.temperature(),interp_surf);
+     _interp.spline_init(surface.log_temperature(),interp_surf);
   }
 
   template <typename CoeffType, typename Interpolator>
@@ -248,7 +254,8 @@ namespace Antioch
      _LJ.reset_coeffs(LJ_depth,LJ_dia);
      _dipole_moment = dipole_moment;
      _mass = mass;
-     _delta_star = (ant_pow(_dipole_moment * Units<CoeffType>("D").get_SI_factor(),2) /
+     _delta_star = CoeffType(1e-7) * ant_pow(Constants::light_celerity<CoeffType>(),2) * // * 1/(4*pi * eps_0) = 10^-7 * c^2
+                   (ant_pow(_dipole_moment * Units<CoeffType>("D").get_SI_factor(),2) /
                      ( _LJ.depth() * Constants::Boltzmann_constant<CoeffType>() * CoeffType(2.L) * ant_pow(_LJ.diameter() * Units<CoeffType>("ang").get_SI_factor(),3) ));
 
 //redefining collision integral
@@ -290,6 +297,13 @@ namespace Antioch
   const CoeffType & PureSpeciesViscosity<CoeffType,Interpolator>::delta_star() const
   {
      return _delta_star;
+  }
+
+  template <typename CoeffType, typename Interpolator>
+  inline
+  const LennardJonesPotential<CoeffType> & PureSpeciesViscosity<CoeffType,Interpolator>::Lennard_Jones() const
+  {
+     return _LJ;
   }
 
 } // end namespace Antioch

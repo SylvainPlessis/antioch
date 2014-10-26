@@ -98,14 +98,16 @@ namespace Antioch{
           const
           ANTIOCH_AUTO(StateType)
              Stockmayer(const StateType & T)
-          ANTIOCH_AUTOFUNC(StateType,_interp.interpolated_value(StateType(T / _reduced_LJ_depth) ) )
+          ANTIOCH_AUTOFUNC(StateType,_interp.interpolated_value(ant_log(T / _reduced_LJ_depth) ) )
 
           //! \return molecular binary diffusion coefficient
           template <typename StateType>
           const 
           ANTIOCH_AUTO(StateType) 
                 binary_diffusion(const StateType & T, const StateType & cTot) const
-          ANTIOCH_AUTOFUNC(StateType,_coefficient * ant_sqrt(T) / (cTot * _interp.interpolated_value(StateType(T / _reduced_LJ_depth))))
+          ANTIOCH_AUTOFUNC(StateType,_coefficient * ant_sqrt(T) / (cTot * _interp.interpolated_value(ant_log(T / _reduced_LJ_depth))))
+
+          const CoeffType & reduced_dipole_moment() const {return _reduced_dipole_moment;}
 
           void print(std::ostream & out = std::cout) const;
 
@@ -159,8 +161,9 @@ namespace Antioch{
      _xi((si.polar() == sj.polar())?1L:this->composed_xi(si,sj)),
      _reduced_LJ_diameter(0.5L * (si.LJ_diameter() + sj.LJ_diameter()) * Units<CoeffType>("ang").get_SI_factor() *_xi * _xi), // 1/2 * (sigma_1 + sigma_2) * xi^2
      _reduced_LJ_depth(ant_sqrt(si.LJ_depth() * sj.LJ_depth()) * ant_pow(_xi,-1.L/6.L)), // sqrt(eps_1 * eps_2) * xi^(-1/6)
-     _reduced_dipole_moment((si.dipole_moment() * sj.dipole_moment() * ant_pow(Units<CoeffType>("D").get_SI_factor(),2 )) / 
-                            ((CoeffType(2.L) * _reduced_LJ_depth * Constants::Boltzmann_constant<CoeffType>() * ant_pow(_reduced_LJ_diameter,3) ))), // mu^2 / (2*eps*sigma^3)
+     _reduced_dipole_moment((CoeffType(1e-7L)*ant_pow(Constants::light_celerity<CoeffType>(),2)) * 
+                              (si.dipole_moment() * sj.dipole_moment() * ant_pow(Units<CoeffType>("D").get_SI_factor(),2 )) / 
+                            (CoeffType(2.L) * _reduced_LJ_depth * Constants::Boltzmann_constant<CoeffType>() * ant_pow(_reduced_LJ_diameter,3) )), // mu^2 / (2*eps*sigma^3)
 /*  = ~ 7.16 10^-25, 
         float can't take it, 
         we cheat on the kb / nAvo division that makes float cry
@@ -170,7 +173,7 @@ namespace Antioch{
      _coefficient(CoeffType(0.1875e-25L) * ant_sqrt(CoeffType(2.L) * Constants::Boltzmann_constant<CoeffType>() * (CoeffType)1e25  /
                                                             (Constants::Avogadro<CoeffType>() * (CoeffType)1e-25 * Constants::pi<CoeffType>())
                                                     )
-                                         / sqrt(_reduced_mass) / (_reduced_LJ_diameter * _reduced_LJ_diameter)
+                                         / ( sqrt(_reduced_mass) * (_reduced_LJ_diameter * _reduced_LJ_diameter) )
                  ) 
   {
      this->build_interpolation();
@@ -196,7 +199,8 @@ namespace Antioch{
      _xi((species[0].polar() == species[1].polar())?1L:this->composed_xi(species[0],species[1])),
      _reduced_LJ_diameter(0.5L * (species[0].LJ_diameter() + species[1].LJ_diameter()) * Units<CoeffType>("ang").get_SI_factor() *_xi * _xi), // 1/2 * (sigma_1 + sigma_2) * xi^2
      _reduced_LJ_depth(ant_sqrt(species[0].LJ_depth() * species[1].LJ_depth()) * ant_pow(_xi,-1.L/6.L)), // sqrt(eps_1 * eps_2) * xi^(-1/6)
-     _reduced_dipole_moment((species[0].dipole_moment() * species[1].dipole_moment() * ant_pow(Units<CoeffType>("D").get_SI_factor(),2) / 
+     _reduced_dipole_moment(CoeffType(1e-7) * ant_pow(Constants::light_celerity<CoeffType>(),2) * // * 1/(4*pi * eps_0) = 10^-7 * c^2
+                             (species[0].dipole_moment() * species[1].dipole_moment() * ant_pow(Units<CoeffType>("D").get_SI_factor(),2) / 
                                 ((CoeffType(2.L)*_reduced_LJ_depth * Constants::Boltzmann_constant<CoeffType>() * ant_pow(_reduced_LJ_diameter,3)))),
 #endif
       _coefficient(0.) // defined in set_coeffs
@@ -228,7 +232,8 @@ namespace Antioch{
      _xi                    = (si.polar() == sj.polar())?1L:this->composed_xi(si,sj);
      _reduced_LJ_diameter   = 0.5L * (si.LJ_diameter() + sj.LJ_diameter()) * Units<CoeffType>("ang").get_SI_factor() *_xi * _xi;
      _reduced_LJ_depth      = ant_sqrt(si.LJ_depth() * sj.LJ_depth()) * ant_pow(_xi,-1.L/6.L);
-     _reduced_dipole_moment = (si.dipole_moment() * sj.dipole_moment()) * ant_pow(Units<CoeffType>("D").get_SI_factor(),2)
+     _reduced_dipole_moment = CoeffType(1e-7) * ant_pow(Constants::light_celerity<CoeffType>(),2) * // * 1/(4*pi * eps_0) = 10^-7 * c^2 
+                             (si.dipole_moment() * sj.dipole_moment()) * ant_pow(Units<CoeffType>("D").get_SI_factor(),2)
                                 / ((CoeffType(2.L)*_reduced_LJ_depth * Constants::Boltzmann_constant<CoeffType>() * ant_pow(_reduced_LJ_diameter,3)));
 /*  = ~ 7.16 10^-25, 
         float can't take it, 
@@ -239,7 +244,7 @@ namespace Antioch{
      _coefficient           = CoeffType(0.1875e-25L) * ant_sqrt(CoeffType(2.L) * Constants::Boltzmann_constant<CoeffType>() * (CoeffType)1e25  /
                                                                   (Constants::Avogadro<CoeffType>() * (CoeffType)1e-25 * Constants::pi<CoeffType>())
                                                                 ) 
-                                                     / (sqrt(_reduced_mass) / (_reduced_LJ_diameter * _reduced_LJ_diameter));
+                                                     / (sqrt(_reduced_mass) * (_reduced_LJ_diameter * _reduced_LJ_diameter));
   }
 
   template <typename CoeffType, typename Interpolator>
@@ -259,9 +264,11 @@ namespace Antioch{
         const TransportSpecies<SpeciesType> &p = (si.polar())?si:sj;
 
         CoeffType pol    =  n.polarizability() / ant_pow(n.LJ_diameter(),3); //ang^3 / ang^3 -> cancel out
+/*
+ant_sqrt(CoeffType(1e-7) * ant_pow(Constants::light_celerity<CoeffType>(),2)) * // * 1/(4*pi * eps_0) = 10^-7 * c^2 ?
+*/
         CoeffType dipole = p.dipole_moment() * Units<CoeffType>("D").get_SI_factor() 
-                           / ant_sqrt(//(CoeffType)4.L * Constants::pi<CoeffType>() * Constants::vacuum_permittivity<CoeffType>() *
-                                         p.LJ_depth() * ant_pow(p.LJ_diameter(),3) * ant_pow(Units<CoeffType>("ang").get_SI_factor(),3) );
+                           / ant_sqrt(p.LJ_depth() * ant_pow(p.LJ_diameter(),3) * ant_pow(Units<CoeffType>("ang").get_SI_factor(),3) );
 
         return (CoeffType)(1.L) + (CoeffType)(0.25L) * pol * dipole * ant_sqrt(p.LJ_depth()/n.LJ_depth());
   }
@@ -279,7 +286,7 @@ namespace Antioch{
         interp_surf[iT] = spline.interpolated_value(_reduced_dipole_moment);
      }
 
-     _interp.spline_init(surface.temperature(),interp_surf);
+     _interp.spline_init(surface.log_temperature(),interp_surf);
   }
 
   template <typename CoeffType, typename Interpolator>
