@@ -67,6 +67,7 @@ namespace Antioch{
         vib( const unsigned int s, const StateType& mu, const StateType T, const StateType & rho, const StateType & Dss) const
         ANTIOCH_AUTOFUNC(StateType, rho * Dss * _thermo.cv_vib(s,T))
 
+      private:
 
         template <typename StateType>
         const
@@ -79,8 +80,6 @@ namespace Antioch{
         ANTIOCH_AUTO(StateType)
          B(unsigned int s, const StateType & T, const StateType & rho_times_self_diff_over_mu) const  
         ANTIOCH_AUTOFUNC(StateType,_rot(T) + two_over_pi * (five_over_three * _thermo.cv_rot_over_R(s) + rho_times_self_diff_over_mu ) )
-
-      private:
 
         /*! never ever use it*/
         PureSpeciesThermalConductivity();
