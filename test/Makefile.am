@@ -53,6 +53,8 @@ check_PROGRAMS += rotational_relaxation_unit
 check_PROGRAMS += pure_species_thermal_conductivity_unit
 check_PROGRAMS += rotational_relaxation_vec_unit
 check_PROGRAMS += pure_species_thermal_conductivity_vec_unit
+check_PROGRAMS += isothermal_reactor_boost_odeint_regression
+check_PROGRAMS += isothermal_isobaric_reactor_boost_odeint_regression
 
 if ANTIOCH_ENABLE_EIGEN
 check_PROGRAMS += stat_mech_thermo_unit_eigen
@@ -73,6 +75,7 @@ AM_CPPFLAGS += -I$(top_srcdir)/src/units/include
 AM_CPPFLAGS += -I$(top_srcdir)/src/particles_flux/include
 AM_CPPFLAGS += -I$(top_srcdir)/src/kinetics/include
 AM_CPPFLAGS += -I$(top_srcdir)/src/parsing/include
+AM_CPPFLAGS += -I$(top_srcdir)/src/reactor/include
 AM_CPPFLAGS += -I$(top_srcdir)/src/thermo/include
 AM_CPPFLAGS += -I$(top_srcdir)/src/transport/include
 AM_CPPFLAGS += -I$(top_srcdir)/src/viscosity/include
@@ -138,7 +141,8 @@ rotational_relaxation_unit_SOURCES = rotational_relaxation_unit.C
 rotational_relaxation_vec_unit_SOURCES = rotational_relaxation_vec_unit.C
 pure_species_thermal_conductivity_vec_unit_SOURCES = pure_species_thermal_conductivity_vec_unit.C
 pure_species_thermal_conductivity_unit_SOURCES = pure_species_thermal_conductivity_unit.C
-
+isothermal_reactor_boost_odeint_regression_SOURCES = isothermal_reactor_boost_odeint_regression.C
+isothermal_isobaric_reactor_boost_odeint_regression_SOURCES = isothermal_isobaric_reactor_boost_odeint_regression.C
 
 if ANTIOCH_ENABLE_EIGEN
 stat_mech_thermo_unit_eigen_SOURCES = stat_mech_thermo_unit_eigen.C
@@ -207,6 +211,8 @@ TESTS += rotational_relaxation_unit
 TESTS += pure_species_thermal_conductivity_unit
 TESTS += rotational_relaxation_vec_unit
 TESTS += pure_species_thermal_conductivity_vec_unit
+TESTS += isothermal_reactor_boost_odeint_regression_air_5sp.sh
+TESTS += isothermal_isobaric_reactor_boost_odeint_regression_air_5sp.sh
 
 if ANTIOCH_ENABLE_EIGEN
 TESTS += stat_mech_thermo_unit_eigen

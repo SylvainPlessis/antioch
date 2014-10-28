@@ -123,6 +123,7 @@ if (test x$HAVE_GRVY = x1); then
   antioch_optional_test_LIBS="$GRVY_LIBS $antioch_optional_test_LIBS"
 fi
 
+
 dnl GSL for spline method
 AX_PATH_GSL_NEW(1.10,no)
 if (test x$HAVE_GSL = x1); then
@@ -131,6 +132,24 @@ if (test x$HAVE_GSL = x1); then
   antioch_optional_test_LDFLAGS="$GSL_LDFLAGS $antioch_optional_test_LDFLAGS"
 fi
 AM_CONDITIONAL(ANTIOCH_ENABLE_GSL, test x$enableeigen = xyes)
+
+dnl Use Boost.ODEInt if it is found
+dnl Need to call BOOST_REQUIRE first to setup flags used in
+dnl the BOOST_FIND_HEADER macro.
+BOOST_REQUIRE([1.53.0], [AC_MSG_WARN([Could not find suitable Boost installation.])] )
+
+BOOST_FIND_HEADER( [boost/numeric/odeint.hpp],
+                   [ AC_MSG_WARN([Could not find Boost.ODEInt])
+                     HAVE_BOOST_ODEINT=0 ],
+                   [ AC_DEFINE([HAVE_BOOST_ODEINT], [1], [Found Boost.ODEInt])
+                     AC_SUBST([HAVE_BOOST_ODEINT])
+                     HAVE_BOOST_ODEINT=1 ] 
+                  )
+
+if (test x$HAVE_BOOST_ODEINT = x1); then
+  antioch_optional_test_INCLUDES="$BOOST_CPPFLAGS $antioch_optional_test_INCLUDES"
+fi
+
 
 AC_SUBST(antioch_optional_INCLUDES)
 AC_SUBST(antioch_optional_test_INCLUDES)
@@ -205,6 +224,11 @@ AC_CONFIG_FILES(test/parsing_xml.sh,                     [chmod +x test/parsing_
 AC_CONFIG_FILES(test/parsing_chemkin.sh,                 [chmod +x test/parsing_chemkin.sh])
 AC_CONFIG_FILES(test/kinetics_reactive_scheme_unit.sh,   [chmod +x test/kinetics_reactive_scheme_unit.sh])
 AC_CONFIG_FILES(test/nasa_evaluator_unit.sh,             [chmod +x test/nasa_evaluator_unit.sh])
+
+AC_CONFIG_FILES(test/isothermal_reactor_boost_odeint_regression_air_5sp.sh,
+                [chmod +x test/isothermal_reactor_boost_odeint_regression_air_5sp.sh])
+AC_CONFIG_FILES(test/isothermal_isobaric_reactor_boost_odeint_regression_air_5sp.sh,
+                [chmod +x test/isothermal_isobaric_reactor_boost_odeint_regression_air_5sp.sh])
 
 dnl-----------------------------------------------
 dnl Generate header files

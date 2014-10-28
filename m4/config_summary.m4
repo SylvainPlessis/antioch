@@ -32,11 +32,14 @@ echo Revision id................... : $BUILD_VERSION
 echo
 echo Testing Options:
 echo '  'Number of tuples............ : $n_tuples
+echo
+echo Optional Libraries:
 if test "x$HAVE_EIGEN" = "x1"; then
   echo '  'Eigen....................... : yes
 else
   echo '  'Eigen....................... : no
 fi
+dnl
 if test "x$HAVE_METAPHYSICL" = "x1"; then
   echo '  'MetaPhysicL................. : yes
   echo '    'METAPHYSICL_CPPFLAGS...... : $METAPHYSICL_CPPFLAGS
@@ -45,6 +48,7 @@ if test "x$HAVE_METAPHYSICL" = "x1"; then
 else
   echo '  'MetaPhysicL................. : no
 fi
+dnl
 if test "x$HAVE_VEXCL" = "x1"; then
   echo '  'VexCL....................... : yes
   echo '    'VEXCL_CPPFLAGS............ : $VEXCL_CPPFLAGS
@@ -53,6 +57,7 @@ if test "x$HAVE_VEXCL" = "x1"; then
 else
   echo '  'VexCL....................... : no
 fi
+dnl
 if test "x$HAVE_VIENNACL" = "x1"; then
   echo '  'ViennaCL.................... : yes
   echo '    'VIENNACL_CPPFLAGS......... : $VIENNACL_CPPFLAGS
@@ -61,6 +66,7 @@ if test "x$HAVE_VIENNACL" = "x1"; then
 else
   echo '  'ViennaCL.................... : no
 fi
+dnl
 if test "x$HAVE_GRVY" = "x1"; then
   echo '  'GRVY........................ : yes
   echo '    'GRVY_CFLAGS............... : $GRVY_CFLAGS
@@ -76,6 +82,14 @@ if test "x$HAVE_GSL" = "x1"; then
 else
   echo '  'GLS......................... : no
 fi
+dnl
+if test "x$HAVE_BOOST_ODEINT" = "x1"; then
+  echo '  'BoostODEInt................. : yes
+  echo '    'BOOST_CPPFLAGS............ : $BOOST_CPPFLAGS
+else
+  echo '  'BoostODEInt................. : no
+fi
+dnl
 echo
 echo '-------------------------------------------------------------------------------'
 
