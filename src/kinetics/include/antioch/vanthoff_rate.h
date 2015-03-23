@@ -132,7 +132,7 @@ namespace Antioch
     template <typename StateType, typename VectorStateType>
     ANTIOCH_AUTO(StateType) 
     rate(const KineticsConditions<StateType,VectorStateType>& T) const
-    ANTIOCH_AUTOFUNC(StateType, _Cf * ant_exp(_eta * T.temp_cache().lnT - _Ea/T.T() + _D*T.T()))
+    ANTIOCH_AUTOFUNC(StateType, _Cf * ant_exp(_eta * T.temp_cache().lnT - _Ea * T.one_over_T() + _D*T.T()))
 
     //! \return the rate evaluated at \p T.
     template <typename StateType, typename VectorStateType>
@@ -144,7 +144,7 @@ namespace Antioch
     template <typename StateType, typename VectorStateType>
     ANTIOCH_AUTO(StateType) 
     derivative( const KineticsConditions<StateType,VectorStateType>& T ) const
-    ANTIOCH_AUTOFUNC(StateType, (*this)(T)*(_D + _eta/T.T() + _Ea/(T.temp_cache().T2)))
+    ANTIOCH_AUTOFUNC(StateType, (*this)(T)*(_D + _eta * T.one_over_T() + _Ea/(T.temp_cache().T2)))
 
     //! Simultaneously evaluate the rate and its derivative at \p T.
     template <typename StateType, typename VectorStateType>
@@ -320,7 +320,7 @@ namespace Antioch
                                                      StateType& drate_dT) const
   {
     rate     = (*this)(T);
-    drate_dT = rate*(_D + _eta/T.T() + _Ea/(T.temp_cache().T2));
+    drate_dT = rate*(_D + _eta * T.one_over_T() + _Ea/(T.temp_cache().T2));
     return;
   }
 

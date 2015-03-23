@@ -71,6 +71,8 @@ namespace Antioch{
 
           const StateType & T() const;
 
+          const StateType & one_over_T() const;
+
           //! returns the temperature T,
           //
           // \todo generalize
@@ -86,6 +88,8 @@ namespace Antioch{
 
           TempCache<StateType> _temperature; 
 
+          StateType _one_over_T;
+
         // pointer's not const, particle flux is
           std::map<unsigned int,ParticleFlux<VectorStateType> const * const > _map_pf; 
 
@@ -95,7 +99,8 @@ namespace Antioch{
   template <typename StateType, typename VectorStateType>
   inline
   KineticsConditions<StateType,VectorStateType>::KineticsConditions(const StateType & temperature):
-        _temperature(temperature)
+        _temperature(temperature),
+        _one_over_T(constant_clone(temperature,1)/temperature)
   {
     return;
   }
@@ -126,6 +131,13 @@ namespace Antioch{
   const StateType & KineticsConditions<StateType,VectorStateType>::Tvib() const
   {
      return _temperature.T;
+  }
+
+  template <typename StateType, typename VectorStateType>
+  inline
+  const StateType & KineticsConditions<StateType,VectorStateType>::one_over_T() const
+  {
+     return _one_over_T;
   }
 
   template <typename StateType, typename VectorStateType>
