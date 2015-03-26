@@ -569,6 +569,7 @@ WARN_LOGFILE           =
 
 INPUT                  = @abs_top_srcdir@/src                  \
                          @abs_top_srcdir@/test                 \
+                         @abs_top_srcdir@/example              \
 		       	 @abs_top_srcdir@/doxygen/antioch.page \
 			 @abs_top_builddir@/doxygen/txt_common/about_vpath.page \
 			 @abs_top_srcdir@/doxygen/txt_common/acknowledgement.page \
