@@ -110,7 +110,7 @@ namespace Antioch
     StateType h_RT_minus_s_R( const TempCache<StateType>& cache) const;
 
     /*!
-      @returns the value \f$\frac{\partial\left(\frac{g}{\mathrm{R}T}\right)}\frac{\partial T} 
+      @returns the value \f$\frac{\partial\left(\frac{g}{\mathrm{R}T}\right)}{\partial T} 
                             = \frac{\partial\left(\frac{h}{\mathrm{R}T} - \frac{s}{R}\right)}{\partial T}\f$
         \f[
             \frac{g}{\mathrm{R}T} = - \frac{a_5}{T^2}   - \frac{a_0}{T}

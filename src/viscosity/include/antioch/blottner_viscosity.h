@@ -41,6 +41,7 @@
 
 namespace Antioch
 {
+  // \class BlottnerViscosity
   template<typename CoeffType=double>
   class BlottnerViscosity
   {
