@@ -36,6 +36,7 @@
 namespace Antioch
 {
 
+  // ! \class ConstantLewisDiffusivity
   template<typename CoeffType=double>
   class ConstantLewisDiffusivity
   {

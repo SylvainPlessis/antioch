@@ -33,6 +33,7 @@
 
 namespace Antioch
 {
+  //! \class EuckenThermalConductivity
   template<class ThermoEvaluator>
   class EuckenThermalConductivity
   {

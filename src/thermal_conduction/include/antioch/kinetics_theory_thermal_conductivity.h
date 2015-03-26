@@ -36,6 +36,7 @@
 
 namespace Antioch{
 
+  // ! \class KineticsTheoryThermalConductivity
   template <typename ThermoEvaluator, typename CoeffType>
   class KineticsTheoryThermalConductivity
   {

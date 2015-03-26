@@ -46,6 +46,7 @@
 
 namespace Antioch{
 
+  // ! \class MolecularBinaryDiffusion
   template <typename CoeffType, typename Interpolator = GSLSpliner>
   class MolecularBinaryDiffusion
   {

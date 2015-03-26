@@ -42,6 +42,7 @@
 
 namespace Antioch
 {
+  //! \class SutherlandViscosity
   template<typename CoeffType=double>
   class SutherlandViscosity
   {
