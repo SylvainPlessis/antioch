@@ -93,6 +93,7 @@ namespace Antioch
   template <typename Macro, typename NumericType>
   class IdealGasMicroThermo;
 
+  //!\class ASCIIParser
   template <typename NumericType>
   class ASCIIParser: public ParserBase<NumericType>
   {
