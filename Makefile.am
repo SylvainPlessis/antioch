@@ -6,7 +6,7 @@ include $(top_srcdir)/doxygen/aminclude.am
 AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS  = -I m4 -I m4/common
 
-SUBDIRS          = src test doxygen share
+SUBDIRS          = src test doxygen share example
 EXTRA_DIST       = CHANGES LICENSE COPYING share
 
 aclocaldir = $(prefix)/share/aclocal

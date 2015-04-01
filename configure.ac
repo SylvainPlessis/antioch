@@ -224,6 +224,7 @@ AC_CONFIG_FILES([
   share/Makefile
   src/Makefile
   test/Makefile
+  example/Makefile
 ])
 
 dnl-----------------------------------------------
@@ -245,7 +246,7 @@ TOP_SEARCH_DIR=$ac_abs_top_srcdir
 # We have to do this by subdirectory because otherwise distcheck
 # breaks as we start picking up files in the directories
 # that it uses.
-ANTIOCH_STAMPED_FILES=$(find $TOP_SEARCH_DIR/{src,test} -name "*.h" -or -name "*.C" | tr "\n" " ")
+ANTIOCH_STAMPED_FILES=$(find $TOP_SEARCH_DIR/{src,test,example} -name "*.h" -or -name "*.C" | tr "\n" " ")
 AC_SUBST(ANTIOCH_STAMPED_FILES)
 
 # defaults files, set here for tests
