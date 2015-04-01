@@ -11,6 +11,7 @@
  * concerns the transport:
  *  - viscosity:
  *     * [Sutherland](@ref SutherlandViscosity),
+ *     * \ref <SutherlandViscosity> {Sutherland},
  *     * [Blottner](@ref BlottnerViscosity),
  *     * [kinetics theory](@ref Antioch::KineticsTheoryViscosity),
  *  - diffusion:
@@ -30,9 +31,34 @@
  *
  * ## Vectorization
  * 
- * first the declarations, at the
- * end the implementation
+ * A first choice is the vectorization (or not)
+ * of the program to be run. Antioch provides
+ * several possibilities:
+ *  - standard vector    (\c std::vector<>)
+ *  - eigen vector       (e.g. \c Eigen::Array<scalar type, size , 1>)
+ *  - valarray vector    (\c std::valarray<>)
+ *  - metaphysicl vector (e.g. \c MetaPhysicL::NumberArray<size, scalar type>)
+ *  - vexcl              (\c vex::vector<>)
+ *
+ * As Antioch uses heavily metaprogrammation,
+ * she requires to know the necessary generic
+ * methods to be used with the chosen vectorization.
+ * The header files are designed ``classicaly'': a
+ * declaration file and an implementation file.
+ * Here comes the declaration files, named on the
+ * design:\n
+ * \c VECTORIZATION_CHOICE_utils_decl.h
+ *
+ * The file ``metaprogramming_decl.h'' is not necessary
+ * here as it is included in every vectorization declaration,
+ * but is shown for completeness. This file is required though
+ * if you choose no vectorization but yet require (which will
+ * certainly be the case) the generic capabilities with non-vectorized
+ * types.
+ *
  * ~~~~~~~~
+#include "antioch/metaprogramming_decl.h" //general declarations
+#include "antioch/vector_utils_decl.h"
 #include "antioch/eigen_utils_decl.h"
 #include "antioch/valarray_utils_decl.h"
 #include "antioch/metaphysicl_utils_decl.h"
@@ -52,7 +78,6 @@
  *
  * ## Transport
  *
- * 
  * We need here to include the viscosity,
  * diffusion and thermal diffusion
  * header files.
@@ -194,6 +219,7 @@ int main()
  * ~~~~~~~~~~~~~~~~~~
  */
 
+#include "antioch/metaprogramming_decl.h" //general declarations
 #include "antioch/eigen_utils_decl.h"
 #include "antioch/valarray_utils_decl.h"
 #include "antioch/metaphysicl_utils_decl.h"
@@ -221,7 +247,7 @@ int main()
 #include "antioch/xml_parser.h"
 //#include "antioch/chemkin_parser.h"
 
-#include "antioch/metaprogramming.h"
+#include "antioch/metaprogramming.h"  //define generic programming for non-vectorized type
 #include "antioch/eigen_utils.h"
 #include "antioch/valarray_utils.h"
 #include "antioch/metaphysicl_utils.h"
