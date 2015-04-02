@@ -10,16 +10,15 @@
  * The models we have to define here
  * concerns the transport:
  *  - viscosity:
- *     * [Sutherland](@ref SutherlandViscosity),
- *     * \ref <SutherlandViscosity> {Sutherland},
- *     * [Blottner](@ref BlottnerViscosity),
+ *     * [Sutherland](@ref Antioch::SutherlandViscosity),
+ *     * [Blottner](@ref Antioch::BlottnerViscosity),
  *     * [kinetics theory](@ref Antioch::KineticsTheoryViscosity),
  *  - diffusion:
- *     * [constant Lewis](@ref ConstantLewisDiffusivity),
- *     * [kinetics theory](@ref MolecularBinaryDiffusion),
+ *     * [constant Lewis](@ref Antioch::ConstantLewisDiffusivity),
+ *     * [kinetics theory](@ref Antioch::MolecularBinaryDiffusion),
  *  - thermal conduction:
- *     * [Eucken](@ref EuckenThermalConductivity),
- *     * [kinetics theory](@ref KineticsTheoryThermalConductivity).
+ *     * [Eucken](@ref Antioch::EuckenThermalConductivity),
+ *     * [kinetics theory](@ref Antioch::KineticsTheoryThermalConductivity).
  *
  * The kinetics is all set up at run
  * time through input files.
@@ -123,9 +122,9 @@
  * ## The parsing
  *
  * Antioch provides three kind of parsers:
- *  - ASCIIParser
- *  - XMLParser
- *  - ChemKinParser
+ *  - [ASCIIParser](@ref Antioch::ASCIIParser)
+ *  - [XMLParser](@ref Antioch::XMLParser)
+ *  - [ChemKinParser](@ref Antioch::ChemKinParser)
  * 
  * We need to include only the necessary format
  *
